@@ -79,5 +79,5 @@ class ProjectPublicWithAccount(ProjectPublic):
     account: AccountPublic | None = None
 
 
-class AccountWithProjects(AccountPublic):
+class AccountPublicWithProjects(AccountPublic):
     projects: list[ProjectPublic] = []
