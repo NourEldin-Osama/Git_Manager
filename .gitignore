@@ -11,3 +11,5 @@ __pycache__/
 *.egg-info/
 *.egg
 *.log
+
+.ruff_cache
