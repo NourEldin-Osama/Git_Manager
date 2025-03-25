@@ -88,11 +88,12 @@ async function handle_project_creation(event) {
     event.preventDefault();
     try {
         ui.loading.show();
-        const project_path = $("#project_path").val();
         const new_project_details = {
-            path: project_path,
+            path: $("#project_path").val(),
+            name: $("#project_name").val(),
             account_id: parseInt($("#account_select").val()),
-            name: project_path.split("/").pop(),
+            remote_url: $("#remote_url").val() || null,
+            remote_name: $("#remote_name").val() || null,
         };
 
         await api.projects.create(new_project_details);

@@ -96,6 +96,17 @@
                             <form id="project_form">
                                 <div class="mb-3">
                                     <label class="form-label"
+                                        >Project Name:</label
+                                    >
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="project_name"
+                                        required
+                                    />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label"
                                         >Project Path:</label
                                     >
                                     <div class="input-group">
@@ -121,6 +132,45 @@
                                         id="account_select"
                                         required
                                     ></select>
+                                </div>
+                                <div class="mb-3">
+                                    <button
+                                        class="btn btn-outline-secondary btn-sm w-100"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#advanced_settings"
+                                        aria-expanded="false"
+                                        aria-controls="advanced_settings"
+                                    >
+                                        Advanced Settings
+                                    </button>
+                                    <div
+                                        class="collapse mt-3"
+                                        id="advanced_settings"
+                                    >
+                                        <div class="mb-3">
+                                            <label class="form-label"
+                                                >Remote URL:</label
+                                            >
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                id="remote_url"
+                                                placeholder="e.g., git@github.com:user/repo.git"
+                                            />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label"
+                                                >Remote Name:</label
+                                            >
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                id="remote_name"
+                                                placeholder="e.g., origin"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">
                                     Configure Project
