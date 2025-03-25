@@ -2,19 +2,19 @@ import { api } from "./api.js";
 import { ui } from "./ui.js";
 
 // Account Management Event Handlers
-async function handle_git_account_creation(form_event) {
-    form_event.preventDefault();
+async function handle_git_account_creation(event) {
+    event.preventDefault();
     try {
         ui.loading.show();
         const new_account_details = {
-            name: document.getElementById("account_name").value,
-            email: document.getElementById("account_email").value,
-            account_type: document.getElementById("account_type").value,
+            name: $("#account_name").val(),
+            email: $("#account_email").val(),
+            account_type: $("#account_type").val(),
         };
 
         await api.accounts.create(new_account_details);
         ui.notifications.show("Account created successfully");
-        document.getElementById("account_form").reset();
+        $("#account_form")[0].reset();
         await refresh_git_accounts();
     } catch (error) {
         ui.notifications.show(error.message, "danger");
@@ -55,63 +55,49 @@ async function handle_ssh_configuration_sync() {
 }
 
 async function handle_ssh_key_copy(account_id, ssh_key) {
-    const copy_button = document.querySelector(
-        `#key_${account_id}`,
-    ).nextElementSibling;
-    await ui.clipboard.copy(
-        ssh_key,
-        copy_button,
-        "SSH key copied to clipboard",
-    );
+    const $button = $(`#account_copy_key_${account_id}`);
+    await ui.clipboard.copy(ssh_key, $button, "SSH key copied to clipboard");
 }
 
 function handle_ssh_key_visibility(account_id, ssh_key) {
-    const key_display_element = document.getElementById(`key_${account_id}`);
-    const visibility_toggle_button =
-        key_display_element.nextElementSibling.nextElementSibling;
-    const is_key_hidden =
-        key_display_element.textContent === "••••••••••••••••";
+    const $key_element = $(`#key_${account_id}`);
+    const $toggle_button = $(`#account_toggle_key_${account_id}`);
+    const is_key_hidden = $key_element.text() === "••••••••••••••••";
 
     if (is_key_hidden) {
-        key_display_element.textContent = ssh_key;
-        visibility_toggle_button.innerHTML = '<i class="bi bi-eye-slash"></i>';
+        $key_element.text(ssh_key);
+        $toggle_button.html('<i class="bi bi-eye-slash"></i>');
     } else {
-        key_display_element.textContent = "••••••••••••••••";
-        visibility_toggle_button.innerHTML = '<i class="bi bi-eye"></i>';
+        $key_element.text("••••••••••••••••");
+        $toggle_button.html('<i class="bi bi-eye"></i>');
     }
 }
 
 async function handle_ssh_command_copy(account_id) {
-    const ssh_command = document
-        .getElementById(`ssh_add_${account_id}`)
-        .textContent.trim();
-    const copy_button = document.getElementById(
-        `ssh_add_${account_id}`,
-    ).nextElementSibling;
+    const ssh_command = $(`#ssh_add_${account_id}`).text().trim();
+    const $button = $(`#account_copy_command_${account_id}`);
     await ui.clipboard.copy(
         ssh_command,
-        copy_button,
+        $button,
         "SSH-add command copied to clipboard",
     );
 }
 
 // Project Management Event Handlers
-async function handle_project_creation(form_event) {
-    form_event.preventDefault();
+async function handle_project_creation(event) {
+    event.preventDefault();
     try {
         ui.loading.show();
-        const project_path = document.getElementById("project_path").value;
+        const project_path = $("#project_path").val();
         const new_project_details = {
             path: project_path,
-            account_id: parseInt(
-                document.getElementById("account_select").value,
-            ),
+            account_id: parseInt($("#account_select").val()),
             name: project_path.split("/").pop(),
         };
 
         await api.projects.create(new_project_details);
         ui.notifications.show("Project configured successfully");
-        document.getElementById("project_form").reset();
+        $("#project_form")[0].reset();
         await refresh_managed_projects();
     } catch (error) {
         ui.notifications.show(error.message, "danger");
@@ -153,7 +139,7 @@ async function handle_project_validation(project_id) {
 async function handle_directory_selection() {
     try {
         const directory_handle = await window.showDirectoryPicker();
-        document.getElementById("project_path").value = directory_handle.name;
+        $("#project_path").val(directory_handle.name);
     } catch (error) {
         if (error.name !== "AbortError") {
             ui.notifications.show(
@@ -190,30 +176,22 @@ async function refresh_managed_projects() {
 }
 
 // Initialize Application
-window.addEventListener("DOMContentLoaded", () => {
-    // Expose handlers to window for inline event handlers
-    Object.assign(window, {
-        handle_git_account_creation,
-        handle_git_account_deletion,
-        handle_ssh_configuration_sync,
-        handle_ssh_key_copy,
-        handle_ssh_key_visibility,
-        handle_ssh_command_copy,
-        handle_project_creation,
-        handle_project_deletion,
-        handle_project_validation,
-        handle_directory_selection,
-    });
-
-    // Add form submit handlers
-    document
-        .getElementById("account_form")
-        .addEventListener("submit", handle_git_account_creation);
-    document
-        .getElementById("project_form")
-        .addEventListener("submit", handle_project_creation);
+$(document).ready(() => {
+    // Bind event handlers
+    $("#account_form").on("submit", handle_git_account_creation);
+    $("#project_form").on("submit", handle_project_creation);
+    $("#sync_ssh_config_btn").on("click", handle_ssh_configuration_sync);
+    $("#browse_directory_btn").on("click", handle_directory_selection);
 
     // Load initial data
     refresh_git_accounts();
     refresh_managed_projects();
 });
+
+// Export handlers for any remaining inline event handling
+window.handle_git_account_deletion = handle_git_account_deletion;
+window.handle_ssh_key_copy = handle_ssh_key_copy;
+window.handle_ssh_key_visibility = handle_ssh_key_visibility;
+window.handle_ssh_command_copy = handle_ssh_command_copy;
+window.handle_project_validation = handle_project_validation;
+window.handle_project_deletion = handle_project_deletion;

@@ -1,59 +1,50 @@
 // UI State Management
 function display_loading_overlay() {
-    document.getElementById("loading_overlay").style.display = "flex";
+    $("#loading_overlay").css("display", "flex");
 }
 
 function hide_loading_overlay() {
-    document.getElementById("loading_overlay").style.display = "none";
+    $("#loading_overlay").css("display", "none");
 }
 
 // Notification System
 function display_notification_toast(message, notification_type = "success") {
-    const notification_container = document.querySelector(".toast_container");
-    const notification = document.createElement("div");
-    notification.className = `toast show bg-${notification_type} text-white`;
-    notification.innerHTML = `
-        <div class="toast-body d-flex justify-content-between align-items-center">
-            ${message}
-            <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.remove()"></button>
+    const $notification = $(`
+        <div class="toast show bg-${notification_type} text-white">
+            <div class="toast-body d-flex justify-content-between align-items-center">
+                ${message}
+                <button type="button" class="btn-close btn-close-white"></button>
+            </div>
         </div>
-    `;
-    notification_container.appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
+    `);
+
+    $notification.find(".btn-close").on("click", function () {
+        $notification.remove();
+    });
+
+    $(".toast_container").append($notification);
+    setTimeout(() => $notification.remove(), 5000);
 }
 
 // Modal Dialog System
 async function display_confirmation_dialog(confirmation_message) {
     return new Promise((resolve) => {
-        const modal_instance = new bootstrap.Modal(
-            document.getElementById("confirmation_modal"),
-        );
-        const confirm_button = document.getElementById(
-            "confirmation_modal_confirm",
-        );
-        document.getElementById("confirmation_modal_body").textContent =
-            confirmation_message;
+        const $modal = $("#confirmation_modal");
+        const modal_instance = bootstrap.Modal.getOrCreateInstance($modal[0]);
 
-        const handle_confirm_action = () => {
+        $("#confirmation_modal_body").text(confirmation_message);
+
+        const handle_confirm = () => {
             modal_instance.hide();
-            confirm_button.removeEventListener("click", handle_confirm_action);
             resolve(true);
         };
 
-        const handle_modal_dismiss = () => {
-            modal_instance.hide();
-            confirm_button.removeEventListener("click", handle_confirm_action);
+        const handle_dismiss = () => {
             resolve(false);
         };
 
-        confirm_button.addEventListener("click", handle_confirm_action);
-        modal_instance._element.addEventListener(
-            "hidden.bs.modal",
-            handle_modal_dismiss,
-            {
-                once: true,
-            },
-        );
+        $modal.one("hidden.bs.modal", handle_dismiss);
+        $("#confirmation_modal_confirm").one("click", handle_confirm);
 
         modal_instance.show();
     });
@@ -81,15 +72,15 @@ function format_timestamp_to_locale(utc_timestamp) {
 // Clipboard Operations
 async function copy_text_to_clipboard(
     text_content,
-    trigger_button,
+    $trigger_button,
     success_message,
 ) {
     try {
         await navigator.clipboard.writeText(text_content);
-        const original_button_content = trigger_button.innerHTML;
-        trigger_button.innerHTML = '<i class="bi bi-clipboard-check"></i>';
+        const original_button_content = $trigger_button.html();
+        $trigger_button.html('<i class="bi bi-clipboard-check"></i>');
         setTimeout(() => {
-            trigger_button.innerHTML = original_button_content;
+            $trigger_button.html(original_button_content);
         }, 1000);
         display_notification_toast(success_message);
     } catch (error) {
@@ -99,33 +90,43 @@ async function copy_text_to_clipboard(
 
 // Account UI Components
 function render_account_list(git_accounts) {
-    const account_list_element = document.getElementById("accounts_list");
-    const account_select_element = document.getElementById("account_select");
+    const $account_list = $("#accounts_list");
+    const $account_select = $("#account_select");
 
-    account_list_element.innerHTML = '<h6 class="mb-3">Existing Accounts</h6>';
-    account_select_element.innerHTML =
-        '<option value="">Select an account</option>';
+    $account_list.html('<h6 class="mb-3">Existing Accounts</h6>');
+    $account_select.html('<option value="">Select an account</option>');
 
     git_accounts.forEach((account) => {
-        render_single_account(
-            account,
-            account_list_element,
-            account_select_element,
-        );
+        render_single_account(account, $account_list, $account_select);
     });
 }
 
-function render_single_account(account_data, list_container, select_element) {
+function render_single_account(account_data, $list_container, $select_element) {
     const masked_key = account_data.public_key
         ? "••••••••••••••••"
         : "No public key available";
-    list_container.innerHTML += generate_account_card_html(
-        account_data,
-        masked_key,
+    $list_container.append(
+        generate_account_card_html(account_data, masked_key),
     );
-    select_element.innerHTML += `
+    $select_element.append(`
         <option value="${account_data.id}">${account_data.name} (${account_data.account_type})</option>
-    `;
+    `);
+
+    // Bind event handlers
+    $(`#account_delete_${account_data.id}`).on("click", () =>
+        handle_git_account_deletion(account_data.id),
+    );
+    if (account_data.public_key) {
+        $(`#account_copy_key_${account_data.id}`).on("click", () =>
+            handle_ssh_key_copy(account_data.id, account_data.public_key),
+        );
+        $(`#account_toggle_key_${account_data.id}`).on("click", () =>
+            handle_ssh_key_visibility(account_data.id, account_data.public_key),
+        );
+        $(`#account_copy_command_${account_data.id}`).on("click", () =>
+            handle_ssh_command_copy(account_data.id),
+        );
+    }
 }
 
 function generate_account_card_html(account_data, masked_key) {
@@ -139,7 +140,7 @@ function generate_account_card_html(account_data, masked_key) {
                     </span>
                 </div>
                 <div>
-                    <button onclick="handle_delete_account(${account_data.id})" class="btn btn-danger btn-sm">
+                    <button id="account_delete_${account_data.id}" class="btn btn-danger btn-sm">
                         Delete
                     </button>
                 </div>
@@ -159,12 +160,10 @@ function generate_account_card_html(account_data, masked_key) {
 
 function generate_key_action_buttons_html(account_data) {
     return `
-        <button class="btn btn-sm btn-outline-secondary"
-                onclick="handle_copy_key('${account_data.id}', '${account_data.public_key.replace(/'/g, "\\'")}')">
+        <button id="account_copy_key_${account_data.id}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-clipboard"></i>
         </button>
-        <button class="btn btn-sm btn-outline-secondary"
-                onclick="handle_toggle_key('${account_data.id}', '${account_data.public_key.replace(/'/g, "\\'")}')">
+        <button id="account_toggle_key_${account_data.id}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-eye"></i>
         </button>
     `;
@@ -192,8 +191,7 @@ function generate_ssh_key_section_html(account_data) {
                     <code class="bg-light p-2 rounded flex-grow-1" id="ssh_add_${account_data.id}">
                         ssh-add "${account_data.ssh_key_path}"
                     </code>
-                    <button class="btn btn-sm btn-outline-secondary"
-                            onclick="handle_copy_ssh_command('${account_data.id}')">
+                    <button id="account_copy_command_${account_data.id}" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-clipboard"></i>
                     </button>
                 </div>
@@ -207,17 +205,16 @@ function generate_ssh_key_section_html(account_data) {
 
 // Project UI Components
 function render_project_list(managed_projects) {
-    const project_list_element = document.getElementById("projects_list");
-    project_list_element.innerHTML =
-        '<h6 class="mb-3">Configured Projects</h6>';
+    const $project_list = $("#projects_list");
+    $project_list.html('<h6 class="mb-3">Configured Projects</h6>');
 
     managed_projects.forEach((project) => {
-        render_single_project(project, project_list_element);
+        render_single_project(project, $project_list);
     });
 }
 
-function render_single_project(project_data, list_container) {
-    list_container.innerHTML += `
+function render_single_project(project_data, $list_container) {
+    const $project = $(`
         <div class="project_card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
@@ -225,10 +222,10 @@ function render_single_project(project_data, list_container) {
                     <small class="text-muted">Path: ${project_data.path}</small>
                 </div>
                 <div>
-                    <button onclick="handle_validate_project(${project_data.id})" class="btn btn-outline-primary btn-sm me-2">
+                    <button id="project_validate_${project_data.id}" class="btn btn-outline-primary btn-sm me-2">
                         Validate
                     </button>
-                    <button onclick="handle_delete_project(${project_data.id})" class="btn btn-danger btn-sm">
+                    <button id="project_delete_${project_data.id}" class="btn btn-danger btn-sm">
                         Delete
                     </button>
                 </div>
@@ -237,7 +234,17 @@ function render_single_project(project_data, list_container) {
                 <small class="text-muted">Created: ${format_timestamp_to_locale(project_data.created_at)}</small>
             </div>
         </div>
-    `;
+    `);
+
+    // Bind event handlers
+    $project
+        .find(`#project_validate_${project_data.id}`)
+        .on("click", () => handle_project_validation(project_data.id));
+    $project
+        .find(`#project_delete_${project_data.id}`)
+        .on("click", () => handle_project_deletion(project_data.id));
+
+    $list_container.append($project);
 }
 
 // Public UI Interface

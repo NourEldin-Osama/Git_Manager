@@ -11,78 +11,86 @@ const CONTENT_TYPES = {
 };
 
 /**
- * Parses and validates API response, handling errors uniformly
- * @param {Response} response - Fetch API response object
+ * Makes an AJAX request and handles common response processing
+ * @param {Object} options - jQuery AJAX options
  * @returns {Promise<any>} Parsed response data
  * @throws {Error} Custom error with detailed message
  */
-async function parse_api_response(response) {
-    const response_data = await response.json();
-    if (!response.ok) {
+async function make_api_request(options) {
+    try {
+        const response = await $.ajax(options);
+        return response;
+    } catch (error) {
         throw new Error(
-            response_data.detail ||
-                `API request failed with status ${response.status}: ${response.statusText}`,
+            error.responseJSON?.detail ||
+                `API request failed: ${error.statusText || "Unknown error"}`,
         );
     }
-    return response_data;
 }
 
 // Account API Functions
 async function fetch_git_accounts() {
-    const response = await fetch("/accounts");
-    return parse_api_response(response);
+    return make_api_request({
+        url: "/accounts",
+        method: HTTP_METHODS.GET,
+    });
 }
 
 async function create_git_account(new_account_details) {
-    const response = await fetch("/accounts", {
+    return make_api_request({
+        url: "/accounts",
         method: HTTP_METHODS.POST,
-        headers: { "Content-Type": CONTENT_TYPES.JSON },
-        body: JSON.stringify(new_account_details),
+        contentType: CONTENT_TYPES.JSON,
+        data: JSON.stringify(new_account_details),
     });
-    return parse_api_response(response);
 }
 
 async function delete_git_account(account_id) {
-    const response = await fetch(`/accounts/${account_id}`, {
+    return make_api_request({
+        url: `/accounts/${account_id}`,
         method: HTTP_METHODS.DELETE,
     });
-    return parse_api_response(response);
 }
 
 async function synchronize_ssh_configuration() {
-    const response = await fetch("/accounts/sync-ssh-config", {
+    return make_api_request({
+        url: "/accounts/sync-ssh-config",
         method: HTTP_METHODS.POST,
     });
-    return parse_api_response(response);
 }
 
 // Project API Functions
 async function fetch_managed_projects() {
-    const response = await fetch("/projects");
-    return parse_api_response(response);
+    return make_api_request({
+        url: "/projects",
+        method: HTTP_METHODS.GET,
+    });
 }
 
 async function create_managed_project(new_project_details) {
-    const response = await fetch("/projects", {
+    return make_api_request({
+        url: "/projects",
         method: HTTP_METHODS.POST,
-        headers: { "Content-Type": CONTENT_TYPES.JSON },
-        body: JSON.stringify(new_project_details),
+        contentType: CONTENT_TYPES.JSON,
+        data: JSON.stringify(new_project_details),
     });
-    return parse_api_response(response);
 }
 
 async function delete_managed_project(project_id) {
-    const response = await fetch(`/projects/${project_id}`, {
+    return make_api_request({
+        url: `/projects/${project_id}`,
         method: HTTP_METHODS.DELETE,
     });
-    return parse_api_response(response);
 }
 
 async function validate_project_configuration(project_id) {
-    const response = await fetch(`/projects/validate/${project_id}`);
-    return parse_api_response(response);
+    return make_api_request({
+        url: `/projects/validate/${project_id}`,
+        method: HTTP_METHODS.GET,
+    });
 }
 
+// Public API Interface
 export const api = {
     accounts: {
         get_all: fetch_git_accounts,
