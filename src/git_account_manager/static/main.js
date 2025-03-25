@@ -2,151 +2,161 @@ import { api } from "./api.js";
 import { ui } from "./ui.js";
 
 // Account Management Event Handlers
-async function handle_create_account(event) {
-    event.preventDefault();
+async function handle_git_account_creation(form_event) {
+    form_event.preventDefault();
     try {
-        ui.show_loading();
-        const account_data = {
+        ui.loading.show();
+        const new_account_details = {
             name: document.getElementById("account_name").value,
             email: document.getElementById("account_email").value,
             account_type: document.getElementById("account_type").value,
         };
 
-        await api.accounts.create(account_data);
-        ui.show_toast("Account created successfully");
+        await api.accounts.create(new_account_details);
+        ui.notifications.show("Account created successfully");
         document.getElementById("account_form").reset();
-        await load_accounts();
+        await refresh_git_accounts();
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-async function handle_delete_account(id) {
-    const confirmed = await ui.show_confirm_dialog(
+async function handle_git_account_deletion(account_id) {
+    const user_confirmed = await ui.dialogs.confirm(
         "Are you sure you want to delete this account?",
     );
-    if (!confirmed) return;
+    if (!user_confirmed) return;
 
     try {
-        ui.show_loading();
-        await api.accounts.delete(id);
-        ui.show_toast("Account deleted successfully");
-        await load_accounts();
+        ui.loading.show();
+        await api.accounts.delete(account_id);
+        ui.notifications.show("Account deleted successfully");
+        await refresh_git_accounts();
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-async function handle_sync_ssh_config() {
+async function handle_ssh_configuration_sync() {
     try {
-        ui.show_loading();
+        ui.loading.show();
         await api.accounts.sync_ssh();
-        ui.show_toast("SSH config synchronized successfully");
-        await load_accounts();
+        ui.notifications.show("SSH config synchronized successfully");
+        await refresh_git_accounts();
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-async function handle_copy_key(id, key) {
-    const button = document.querySelector(`#key_${id}`).nextElementSibling;
-    await ui.copy_to_clipboard(key, button, "SSH key copied to clipboard");
+async function handle_ssh_key_copy(account_id, ssh_key) {
+    const copy_button = document.querySelector(
+        `#key_${account_id}`,
+    ).nextElementSibling;
+    await ui.clipboard.copy(
+        ssh_key,
+        copy_button,
+        "SSH key copied to clipboard",
+    );
 }
 
-function handle_toggle_key(id, key) {
-    const key_element = document.getElementById(`key_${id}`);
-    const button = key_element.nextElementSibling.nextElementSibling;
-    const is_hidden = key_element.textContent === "••••••••••••••••";
+function handle_ssh_key_visibility(account_id, ssh_key) {
+    const key_display_element = document.getElementById(`key_${account_id}`);
+    const visibility_toggle_button =
+        key_display_element.nextElementSibling.nextElementSibling;
+    const is_key_hidden =
+        key_display_element.textContent === "••••••••••••••••";
 
-    if (is_hidden) {
-        key_element.textContent = key;
-        button.innerHTML = '<i class="bi bi-eye-slash"></i>';
+    if (is_key_hidden) {
+        key_display_element.textContent = ssh_key;
+        visibility_toggle_button.innerHTML = '<i class="bi bi-eye-slash"></i>';
     } else {
-        key_element.textContent = "••••••••••••••••";
-        button.innerHTML = '<i class="bi bi-eye"></i>';
+        key_display_element.textContent = "••••••••••••••••";
+        visibility_toggle_button.innerHTML = '<i class="bi bi-eye"></i>';
     }
 }
 
-async function handle_copy_ssh_command(id) {
-    const command = document.getElementById(`ssh_add_${id}`).textContent.trim();
-    const button = document.getElementById(`ssh_add_${id}`).nextElementSibling;
-    await ui.copy_to_clipboard(
-        command,
-        button,
+async function handle_ssh_command_copy(account_id) {
+    const ssh_command = document
+        .getElementById(`ssh_add_${account_id}`)
+        .textContent.trim();
+    const copy_button = document.getElementById(
+        `ssh_add_${account_id}`,
+    ).nextElementSibling;
+    await ui.clipboard.copy(
+        ssh_command,
+        copy_button,
         "SSH-add command copied to clipboard",
     );
 }
 
 // Project Management Event Handlers
-async function handle_create_project(event) {
-    event.preventDefault();
+async function handle_project_creation(form_event) {
+    form_event.preventDefault();
     try {
-        ui.show_loading();
-        const project_data = {
-            path: document.getElementById("project_path").value,
+        ui.loading.show();
+        const project_path = document.getElementById("project_path").value;
+        const new_project_details = {
+            path: project_path,
             account_id: parseInt(
                 document.getElementById("account_select").value,
             ),
-            name: document
-                .getElementById("project_path")
-                .value.split("/")
-                .pop(),
+            name: project_path.split("/").pop(),
         };
 
-        await api.projects.create(project_data);
-        ui.show_toast("Project configured successfully");
+        await api.projects.create(new_project_details);
+        ui.notifications.show("Project configured successfully");
         document.getElementById("project_form").reset();
-        await load_projects();
+        await refresh_managed_projects();
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-async function handle_delete_project(project_id) {
-    const confirmed = await ui.show_confirm_dialog(
+async function handle_project_deletion(project_id) {
+    const user_confirmed = await ui.dialogs.confirm(
         "Are you sure you want to delete this project?",
     );
-    if (!confirmed) return;
+    if (!user_confirmed) return;
 
     try {
-        ui.show_loading();
+        ui.loading.show();
         await api.projects.delete(project_id);
-        ui.show_toast("Project deleted successfully");
-        await load_projects();
+        ui.notifications.show("Project deleted successfully");
+        await refresh_managed_projects();
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-async function handle_validate_project(project_id) {
+async function handle_project_validation(project_id) {
     try {
-        ui.show_loading();
+        ui.loading.show();
         await api.projects.validate(project_id);
-        ui.show_toast("Project configuration is valid");
+        ui.notifications.show("Project configuration is valid");
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-async function handle_browse_directory() {
+async function handle_directory_selection() {
     try {
-        const dir_handle = await window.showDirectoryPicker();
-        document.getElementById("project_path").value = dir_handle.name;
+        const directory_handle = await window.showDirectoryPicker();
+        document.getElementById("project_path").value = directory_handle.name;
     } catch (error) {
         if (error.name !== "AbortError") {
-            ui.show_toast(
+            ui.notifications.show(
                 "Failed to select directory: " + error.message,
                 "danger",
             );
@@ -155,55 +165,55 @@ async function handle_browse_directory() {
 }
 
 // Data Loading Functions
-async function load_accounts() {
+async function refresh_git_accounts() {
     try {
-        ui.show_loading();
-        const accounts = await api.accounts.get_all();
-        ui.accounts.render(accounts);
+        ui.loading.show();
+        const git_accounts = await api.accounts.get_all();
+        ui.accounts.render(git_accounts);
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-async function load_projects() {
+async function refresh_managed_projects() {
     try {
-        ui.show_loading();
-        const projects = await api.projects.get_all();
-        ui.projects.render(projects);
+        ui.loading.show();
+        const managed_projects = await api.projects.get_all();
+        ui.projects.render(managed_projects);
     } catch (error) {
-        ui.show_toast(error.message, "danger");
+        ui.notifications.show(error.message, "danger");
     } finally {
-        ui.hide_loading();
+        ui.loading.hide();
     }
 }
 
-// Initialize
+// Initialize Application
 window.addEventListener("DOMContentLoaded", () => {
     // Expose handlers to window for inline event handlers
     Object.assign(window, {
-        handle_create_account,
-        handle_delete_account,
-        handle_sync_ssh_config,
-        handle_copy_key,
-        handle_toggle_key,
-        handle_copy_ssh_command,
-        handle_create_project,
-        handle_delete_project,
-        handle_validate_project,
-        handle_browse_directory,
+        handle_git_account_creation,
+        handle_git_account_deletion,
+        handle_ssh_configuration_sync,
+        handle_ssh_key_copy,
+        handle_ssh_key_visibility,
+        handle_ssh_command_copy,
+        handle_project_creation,
+        handle_project_deletion,
+        handle_project_validation,
+        handle_directory_selection,
     });
 
     // Add form submit handlers
     document
         .getElementById("account_form")
-        .addEventListener("submit", handle_create_account);
+        .addEventListener("submit", handle_git_account_creation);
     document
         .getElementById("project_form")
-        .addEventListener("submit", handle_create_project);
+        .addEventListener("submit", handle_project_creation);
 
     // Load initial data
-    load_accounts();
-    load_projects();
+    refresh_git_accounts();
+    refresh_managed_projects();
 });
