@@ -5,86 +5,17 @@
     <title>Git Account Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 20px;
-        }
-
-        .card {
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .account-card {
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: white;
-        }
-
-        .project-card {
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: white;
-        }
-
-        .pub-key {
-            word-break: break-all;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            font-family: monospace;
-        }
-
-        .key-content {
-            font-family: monospace;
-            word-break: break-all;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            flex-grow: 1;
-        }
-
-        #loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-        }
-    </style>
+    <link href="styles.css" rel="stylesheet">
 </head>
 
 <body>
-    <div id="loading">
+    <div id="loading_overlay">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
 
-    <div class="toast-container"></div>
+    <div class="toast_container"></div>
 
     <div class="container">
         <h1 class="mb-4">Git Account Manager</h1>
@@ -95,23 +26,23 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Account Management</h5>
-                        <button class="btn btn-outline-primary btn-sm" onclick="syncSSHConfig()">
+                        <button class="btn btn-outline-primary btn-sm" onclick="handle_sync_ssh_config()">
                             Sync SSH Config
                         </button>
                     </div>
                     <div class="card-body">
-                        <form id="accountForm" onsubmit="createAccount(event)">
+                        <form id="account_form">
                             <div class="mb-3">
                                 <label class="form-label">Name:</label>
-                                <input type="text" class="form-control" id="accountName" required>
+                                <input type="text" class="form-control" id="account_name" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Email:</label>
-                                <input type="email" class="form-control" id="accountEmail" required>
+                                <input type="email" class="form-control" id="account_email" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Account Type:</label>
-                                <select class="form-select" id="accountType">
+                                <select class="form-select" id="account_type">
                                     <option value="personal">Personal</option>
                                     <option value="work">Work</option>
                                 </select>
@@ -121,7 +52,7 @@
 
                         <hr>
 
-                        <div id="accountsList"></div>
+                        <div id="accounts_list"></div>
                     </div>
                 </div>
             </div>
@@ -133,455 +64,55 @@
                         <h5 class="mb-0">Project Management</h5>
                     </div>
                     <div class="card-body">
-                        <form id="projectForm" onsubmit="configureProject(event)">
+                        <form id="project_form">
                             <div class="mb-3">
                                 <label class="form-label">Project Path:</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="projectPath" required>
-                                    <button type="button" class="btn btn-outline-secondary" onclick="browseDirectory()">
+                                    <input type="text" class="form-control" id="project_path" required>
+                                    <button type="button" class="btn btn-outline-secondary"
+                                        onclick="handle_browse_directory()">
                                         Browse
                                     </button>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Account:</label>
-                                <select class="form-select" id="accountSelect" required></select>
+                                <select class="form-select" id="account_select" required></select>
                             </div>
                             <button type="submit" class="btn btn-primary">Configure Project</button>
                         </form>
 
                         <hr>
 
-                        <div id="projectsList"></div>
+                        <div id="projects_list"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // Utility Functions
-        function showLoading() {
-            document.getElementById('loading').style.display = 'flex';
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        function showToast(message, type = 'success') {
-            const toastContainer = document.querySelector('.toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast show bg-${type} text-white`;
-            toast.innerHTML = `
-                <div class="toast-body d-flex justify-content-between align-items-center">
-                    ${message}
-                    <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.remove()"></button>
-                </div>
-            `;
-            toastContainer.appendChild(toast);
-            setTimeout(() => toast.remove(), 5000);
-        }
-
-        async function handleResponse(response) {
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.detail || 'An error occurred');
-            }
-            return data;
-        }
-
-        function formatDateTime(utcDateString) {
-            // Ensure we parse the date string as UTC
-            const date = new Date(utcDateString + 'Z');  // Append 'Z' to indicate UTC
-
-            // Format time in 12-hour format
-            const time = date.toLocaleString(undefined, {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-
-            // Format date in UK format, e.g., 25 March 2025
-            const date_str = date.toLocaleString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-
-            return `${time}, ${date_str}`;
-        }
-
-        // Account Management
-        async function loadAccounts() {
-            try {
-                showLoading();
-                const response = await fetch('/accounts');
-                const accounts = await handleResponse(response);
-
-                const accountsList = document.getElementById('accountsList');
-                const accountSelect = document.getElementById('accountSelect');
-
-                accountsList.innerHTML = '<h6 class="mb-3">Existing Accounts</h6>';
-                accountSelect.innerHTML = '<option value="">Select an account</option>';
-
-                accounts.forEach(account => {
-                    const hiddenKey = account.public_key ? '••••••••••••••••' : 'No public key available';
-                    accountsList.innerHTML += `
-                        <div class="account-card">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">${account.name}</h6>
-                                    <span class="badge bg-${account.account_type === 'work' ? 'primary' : 'success'}">
-                                        ${account.account_type}
-                                    </span>
-                                </div>
-                                <div>
-                                    <button onclick="deleteAccount(${account.id})" class="btn btn-danger btn-sm">
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                            <p class="mb-1 mt-2">Email: ${account.email}</p>
-                            <small class="text-muted">Created: ${formatDateTime(account.created_at)}</small>
-                            <div class="pub-key mt-2">
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <span class="key-content" id="key-${account.id}">${hiddenKey}</span>
-                                    ${account.public_key ? `
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                onclick="copyKey('${account.id}', '${account.public_key.replace(/'/g, "\\'")}')">
-                                            <i class="bi bi-clipboard"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                onclick="toggleKey('${account.id}', '${account.public_key.replace(/'/g, "\\'")}')">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    ` : ''}
-                                </div>
-                                ${account.public_key ? `
-                                    <div class="mt-3">
-                                        <!-- GitHub SSH Key Addition Section -->
-                                        <div class="mb-4">
-                                            <a href="https://github.com/settings/ssh/new"
-                                               target="_blank"
-                                               class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-github"></i> Add SSH Key to GitHub
-                                            </a>
-                                            <small class="text-muted d-block mt-2">
-                                                Click to open GitHub's SSH settings.
-                                            </small>
-                                            <small class="text-muted d-block mt-2">
-                                                Copy the key to add it to your account.
-                                            </small>
-                                        </div>
-
-                                        <!-- SSH Agent Command Section -->
-                                        <div class="mt-4 pt-3 border-top">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <code class="bg-light p-2 rounded flex-grow-1" id="ssh-add-${account.id}">
-                                                    ssh-add "${account.ssh_key_path}"
-                                                </code>
-                                                <button class="btn btn-sm btn-outline-secondary"
-                                                        onclick="copySshCommand('${account.id}')">
-                                                    <i class="bi bi-clipboard"></i>
-                                                </button>
-                                            </div>
-                                            <small class="text-muted d-block mt-2">
-                                                Run this command to add the SSH key to your SSH agent.
-                                            </small>
-                                        </div>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-
-                    accountSelect.innerHTML += `
-                        <option value="${account.id}">${account.name} (${account.account_type})</option>
-                    `;
-                });
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function copyKey(id, key) {
-            try {
-                await navigator.clipboard.writeText(key);
-
-                // Visual feedback - temporarily change the icon
-                const button = document.querySelector(`#key-${id}`).nextElementSibling;
-                const originalHTML = button.innerHTML;
-                button.innerHTML = '<i class="bi bi-clipboard-check"></i>';
-
-                setTimeout(() => {
-                    button.innerHTML = originalHTML;
-                }, 1000);
-
-                showToast('SSH key copied to clipboard');
-            } catch (error) {
-                showToast('Failed to copy key to clipboard', 'danger');
-            }
-        }
-
-        function toggleKey(id, key) {
-            const keyElement = document.getElementById(`key-${id}`);
-            const button = keyElement.nextElementSibling.nextElementSibling;
-            const isHidden = keyElement.textContent === '••••••••••••••••';
-
-            if (isHidden) {
-                keyElement.textContent = key;
-                button.innerHTML = '<i class="bi bi-eye-slash"></i>';
-            } else {
-                keyElement.textContent = '••••••••••••••••';
-                button.innerHTML = '<i class="bi bi-eye"></i>';
-            }
-        }
-
-        async function createAccount(event) {
-            event.preventDefault();
-            try {
-                showLoading();
-                const response = await fetch('/accounts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: document.getElementById('accountName').value,
-                        email: document.getElementById('accountEmail').value,
-                        account_type: document.getElementById('accountType').value
-                    })
-                });
-
-                await handleResponse(response);
-                showToast('Account created successfully');
-                document.getElementById('accountForm').reset();
-                await loadAccounts();
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function deleteAccount(id) {
-            const confirmed = await showConfirmDialog('Are you sure you want to delete this account?');
-            if (!confirmed) return;
-
-            try {
-                showLoading();
-                const response = await fetch(`/accounts/${id}`, {
-                    method: 'DELETE'
-                });
-                await handleResponse(response);
-                showToast('Account deleted successfully');
-                await loadAccounts();
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function syncSSHConfig() {
-            try {
-                showLoading();
-                const response = await fetch('/accounts/sync-ssh-config', {
-                    method: 'POST'
-                });
-                await handleResponse(response);
-                showToast('SSH config synchronized successfully');
-                await loadAccounts();
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Project Management
-        async function configureProject(event) {
-            event.preventDefault();
-            try {
-                showLoading();
-                const path = document.getElementById('projectPath').value;
-                const accountId = document.getElementById('accountSelect').value;
-
-                const response = await fetch('/projects', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        path: path,
-                        account_id: parseInt(accountId),
-                        name: path.split('/').pop()
-                    })
-                });
-
-                await handleResponse(response);
-                showToast('Project configured successfully');
-                document.getElementById('projectForm').reset();
-                await loadProjects();
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function loadProjects() {
-            try {
-                showLoading();
-                const response = await fetch('/projects');
-                const projects = await handleResponse(response);
-
-                const projectsList = document.getElementById('projectsList');
-                projectsList.innerHTML = '<h6 class="mb-3">Configured Projects</h6>';
-
-                projects.forEach(project => {
-                    projectsList.innerHTML += `
-                        <div class="project-card">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">${project.name}</h6>
-                                    <small class="text-muted">Path: ${project.path}</small>
-                                </div>
-                                <div>
-                                    <button onclick="validateProject(${project.id})" class="btn btn-outline-primary btn-sm me-2">
-                                        Validate
-                                    </button>
-                                    <button onclick="deleteProject(${project.id})" class="btn btn-danger btn-sm">
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <small class="text-muted">Created: ${formatDateTime(project.created_at)}</small>
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function validateProject(projectId) {
-            try {
-                showLoading();
-                const response = await fetch(`/projects/validate/${projectId}`);
-                await handleResponse(response);
-                showToast('Project configuration is valid');
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function browseDirectory() {
-            try {
-                const dirHandle = await window.showDirectoryPicker();
-                document.getElementById('projectPath').value = dirHandle.name;
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    showToast('Failed to select directory: ' + error.message, 'danger');
-                }
-            }
-        }
-
-        async function deleteProject(projectId) {
-            const confirmed = await showConfirmDialog('Are you sure you want to delete this project?');
-            if (!confirmed) return;
-
-            try {
-                showLoading();
-                const response = await fetch(`/projects/${projectId}`, {
-                    method: 'DELETE'
-                });
-                await handleResponse(response);
-                showToast('Project deleted successfully');
-                await loadProjects();
-            } catch (error) {
-                showToast(error.message, 'danger');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function copySshCommand(id) {
-            try {
-                const command = document.getElementById(`ssh-add-${id}`).textContent.trim();
-                await navigator.clipboard.writeText(command);
-
-                // Visual feedback - temporarily change the icon
-                const button = document.getElementById(`ssh-add-${id}`).nextElementSibling;
-                const originalHTML = button.innerHTML;
-                button.innerHTML = '<i class="bi bi-clipboard-check"></i>';
-
-                setTimeout(() => {
-                    button.innerHTML = originalHTML;
-                }, 1000);
-
-                showToast('SSH-add command copied to clipboard');
-            } catch (error) {
-                showToast('Failed to copy command to clipboard', 'danger');
-            }
-        }
-
-        async function showConfirmDialog(message) {
-            return new Promise((resolve) => {
-                const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-                const confirmButton = document.getElementById('confirmationModalConfirm');
-                document.getElementById('confirmationModalBody').textContent = message;
-
-                const handleConfirm = () => {
-                    modal.hide();
-                    confirmButton.removeEventListener('click', handleConfirm);
-                    resolve(true);
-                };
-
-                const handleHide = () => {
-                    modal.hide();
-                    confirmButton.removeEventListener('click', handleConfirm);
-                    resolve(false);
-                };
-
-                confirmButton.addEventListener('click', handleConfirm);
-                modal._element.addEventListener('hidden.bs.modal', handleHide, { once: true });
-
-                modal.show();
-            });
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadAccounts();
-            loadProjects();
-        });
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal fade" id="confirmation_modal" tabindex="-1" aria-labelledby="confirmation_modal_label"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                    <h5 class="modal-title" id="confirmation_modal_label">Confirm Action</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="confirmationModalBody">
+                <div class="modal-body" id="confirmation_modal_body">
                     Are you sure you want to proceed?
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmationModalConfirm">Confirm</button>
+                    <button type="button" class="btn btn-danger" id="confirmation_modal_confirm">Confirm</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 
 </html>
