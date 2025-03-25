@@ -135,11 +135,9 @@ class GitManager:
         return True
 
     @staticmethod
-    def update_remote_url(
-        path: Path, account_name: str, account_type: str, repo_url: str, remote: str = "origin"
-    ) -> bool:
+    def add_remote(path: Path, remote_name: str, remote_url: str) -> bool:
         """
-        Updates remote URL to use SSH config host
+        Adds remote to git repository using provided URL directly.
 
         Examples:
         - From: https://github.com/user/repo.git
@@ -149,23 +147,12 @@ class GitManager:
         - To: git@github-username-work:user/repo.git
         """
         try:
-            # Extract repo path from URL
-            repo_path = GitManager.get_repo_path(repo_url)
-            if not repo_path:
-                return False
-
-            # Validate repo path
-            if not GitManager.validate_repo_path(repo_path):
-                return False
-
-            # Construct new SSH URL
-            new_url = f"git@github-{account_name}-{account_type}:{repo_path}.git"
-
-            # Update remote
-            command = f"git remote add {remote} {new_url}".split()
+            # Add remote using provided URL directly
+            command = f"git remote add {remote_name} {remote_url}".split()
             subprocess.run(command, cwd=path, check=True)
             return True
-        except (subprocess.CalledProcessError, IndexError):
+        except Exception as error:
+            print("Error adding remote:", error)
             return False
 
     @staticmethod

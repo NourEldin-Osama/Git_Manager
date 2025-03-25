@@ -77,49 +77,77 @@ def list_accounts_ssh_config(session: Session) -> list[dict]:
     return accounts
 
 
-def configure_project(project: Project, account: Account) -> Project:
-    """Configure a project to use specific git account"""
-    path = Path(project.path).expanduser()
-    # Validate project path
-    if not GitManager.validate_git_repo(path):
-        raise ValueError(f"Invalid Git repository: {path}")
+def validate_project_path(project_path: Path) -> None:
+    """Validate the project path is a valid git repository."""
+    if not GitManager.validate_git_repo(project_path):
+        raise ValueError(f"Invalid Git repository: {project_path}")
 
+
+def get_remote_info(path: Path, project: Project) -> tuple[str, str]:
+    """Get or validate remote URL and name for a project."""
+    existing_remote = False
     # Get current remote URL and name
-    remote_url, remote_name = GitManager.get_remote_url(path)
-
-    # If no remote URL is found, use the project remote URL
-    if not remote_url:
+    remote_info = GitManager.get_remote_url(path)
+    if remote_info:
+        remote_url, remote_name = remote_info
+        existing_remote = True
+    else:
+        # If no remote URL is found, use the project remote URL and name
         remote_url = project.remote_url
-        remote_name = project.remote_name
+        remote_name = project.remote_name or "origin"
 
     if not remote_url or not remote_name:
         raise ValueError(f"No remote URL or remote name found for project: {path}")
 
     # Remove existing remote if it exists
-    GitManager.remove_remote(path, remote_name)
+    if existing_remote:
+        GitManager.remove_remote(path, remote_name)
 
+    return remote_url, remote_name
+
+
+def validate_remote_url_and_path(remote_url: str) -> str:
+    """Validate remote URL and get repository path."""
     # Validate remote URL
     if not GitManager.validate_remote_url(remote_url):
         raise ValueError(f"Invalid remote URL: {remote_url}")
 
+    # Get repo path from URL
+    repo_path = GitManager.get_repo_path(remote_url)
+    if not repo_path:
+        raise ValueError(f"Invalid repository path in URL: {remote_url}")
+    # Validate repo path
+    if not GitManager.validate_repo_path(repo_path):
+        raise ValueError(f"Invalid repository path: {repo_path}")
+
+    return repo_path
+
+
+def configure_project(project: Project, account: Account) -> Project:
+    """Configure a project to use specific git account."""
+    path = Path(project.path).expanduser()
+    validate_project_path(path)
+
+    remote_url, remote_name = get_remote_info(path, project)
+    repo_path = validate_remote_url_and_path(remote_url)
     account_type = account.account_type.value
+
+    # Construct new SSH URL using SSH config host
+    new_remote_url = f"git@github-{account.name}-{account_type}:{repo_path}.git"
+
     print(
-        f"""
-        Configuring project {project.name} with remote URL: {remote_url},
-        remote name: {remote_name}, account: {account.name}, email: {account.email},
-        SSH key path: {account.ssh_key_path}, public key: {account.public_key}, account type: {account_type}
-        """
+        f"Configuring project {project.name} with remote URL: {remote_url}, \n"
+        f"remote name: {remote_name}, account: {account.name}, email: {account.email}, \n"
+        f"SSH key path: {account.ssh_key_path}, public key: {account.public_key}, account type: {account_type}\n"
     )
-    # Update remote URL
-    success = GitManager.update_remote_url(
-        path,
-        account.name,
-        account_type,
-        remote_url,
-        remote_name,
-    )
+    # Add remote URL
+    success = GitManager.add_remote(path, remote_name, new_remote_url)
     if not success:
         raise ValueError(f"Failed to update remote URL for project: {path}")
+
+    # Update project with new URL
+    project.remote_url = new_remote_url
+    project.remote_name = remote_name
 
     # Check account name and email
     if not account.name or not account.email:
@@ -130,10 +158,7 @@ def configure_project(project: Project, account: Account) -> Project:
         raise ValueError(f"Failed to set Git user config for project: {path}")
 
     # Update project in database
-    project.remote_url = remote_url
-    project.remote_name = remote_name
     project.configured = True
-
     return project
 
 
