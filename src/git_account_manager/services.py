@@ -2,7 +2,8 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
-from .models import Account
+from .git_manager import GitManager
+from .models import Account, Project
 from .ssh_manager import SSH_CONFIG_PATH, generate_ssh_key, read_public_key, update_ssh_config
 
 
@@ -73,3 +74,72 @@ def list_accounts_ssh_config(session: Session) -> list[dict]:
                 account_type = None
 
     return accounts
+
+
+def configure_project(project: Project, account: Account) -> Project:
+    """Configure a project to use specific git account"""
+    path = Path(project.path).expanduser()
+    # Validate project path
+    if not GitManager.validate_git_repo(path):
+        raise ValueError(f"Invalid Git repository: {path}")
+
+    # Get current remote URL and name
+    remote_url, remote_name = GitManager.get_remote_url(path)
+
+    # If no remote URL is found, use the project remote URL
+    if not remote_url:
+        remote_url = project.remote_url
+        remote_name = project.remote_name
+
+    if not remote_url or not remote_name:
+        raise ValueError(f"No remote URL or remote name found for project: {path}")
+
+    # Remove existing remote if it exists
+    GitManager.remove_remote(path, remote_name)
+
+    # Validate remote URL
+    if not GitManager.validate_remote_url(remote_url):
+        raise ValueError(f"Invalid remote URL: {remote_url}")
+
+    # Update remote URL
+    success = GitManager.update_remote_url(
+        path,
+        account.name,
+        account.account_type,
+        remote_url,
+        remote_name,
+    )
+    if not success:
+        raise ValueError(f"Failed to update remote URL for project: {path}")
+
+    # Check account name and email
+    if not account.name or not account.email:
+        raise ValueError("Account name and email must be set")
+
+    # Set Git user config for the project
+    if not GitManager.set_user_config(path, account.name, account.email):
+        raise ValueError(f"Failed to set Git user config for project: {path}")
+
+    # Update project in database
+    project.remote_url = remote_url
+    project.remote_name = remote_name
+    project.configured = True
+
+    return project
+
+
+def validate_project_configuration(project: Project) -> None:
+    """Validate the project configuration."""
+    if not project.configured:
+        raise ValueError("Project is not configured")
+    if not project.remote_url:
+        raise ValueError("Project remote URL is not set")
+    if not project.remote_name:
+        raise ValueError("Project remote name is not set")
+    if not project.account_id:
+        raise ValueError("Project account is not set")
+
+    path = Path(project.path).expanduser()
+    host = project.remote_url.split(":")[0]
+
+    GitManager.validate_ssh_connection(path=path, host=host)

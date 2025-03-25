@@ -50,6 +50,8 @@ class ProjectBase(SQLModel):
     path: str = Field(index=True)
     name: str = Field(index=True)
     account_id: int | None = Field(default=None, foreign_key="account.id")
+    remote_url: str | None = Field(default=None, index=True)
+    remote_name: str | None = Field(default=None, index=True)
 
 
 class Project(ProjectBase, table=True):
@@ -57,6 +59,7 @@ class Project(ProjectBase, table=True):
     created_at: datetime = Field(default_factory=get_current_time)
     updated_at: datetime = Field(default_factory=get_current_time)
     account: Account | None = Relationship(back_populates="projects")
+    configured: bool = Field(default=False)
 
 
 class ProjectCreate(ProjectBase):

@@ -5,23 +5,35 @@ from sqlmodel import select
 
 from ..dependencies import SessionDependency
 from ..models import (
+    Account,
     Project,
     ProjectCreate,
     ProjectPublic,
     ProjectPublicWithAccount,
     ProjectUpdate,
 )
+from ..services import configure_project, validate_project_configuration
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
 @router.post("", response_model=ProjectPublic)
 async def create_project(project: ProjectCreate, session: SessionDependency):
-    project_db = Project.model_validate(project)
-    session.add(project_db)
-    session.commit()
-    session.refresh(project_db)
-    return project_db
+    try:
+        # Validate account exists
+        account = session.get(Account, project.account_id)
+        if not account:
+            raise HTTPException(status_code=404, detail="Account not found")
+
+        # Create and configure project
+        project_db = Project.model_validate(project)
+        project_db = configure_project(project_db, account)
+        session.add(project_db)
+        session.commit()
+        session.refresh(project_db)
+        return project_db
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("", response_model=list[ProjectPublic])
@@ -63,3 +75,19 @@ async def delete_project(project_id: int, session: SessionDependency):
     session.delete(project)
     session.commit()
     return {"message": "Project deleted successfully"}
+
+
+# an endpoint to validate a project is configured correctly
+@router.get("/validate/{project_id}")
+async def validate_project(project_id: int, session: SessionDependency):
+    project = session.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if not project.configured:
+        raise HTTPException(status_code=400, detail="Project is not configured")
+    # Validate the project configuration
+    try:
+        validate_project_configuration(project)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"message": "Project is configured correctly"}
