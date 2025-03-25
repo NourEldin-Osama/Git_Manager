@@ -136,9 +136,14 @@ def configure_project(project: Project, account: Account) -> Project:
     new_remote_url = f"git@github-{account.name}-{account_type}:{repo_path}.git"
 
     print(
-        f"Configuring project {project.name} with remote URL: {remote_url}, \n"
-        f"remote name: {remote_name}, account: {account.name}, email: {account.email}, \n"
-        f"SSH key path: {account.ssh_key_path}, public key: {account.public_key}, account type: {account_type}\n"
+        f"Configuring project {project.name},\n"
+        f"with remote URL: {remote_url},\n"
+        f"New remote URL: {new_remote_url},\n"
+        f"remote name: {remote_name},\n"
+        f"account: {account.name}, account type: {account_type},\n"
+        f"email: {account.email}, name: {account.name},\n"
+        f"SSH key path: {account.ssh_key_path},\n"
+        f"public key: {account.public_key}"
     )
     # Add remote URL
     success = GitManager.add_remote(path, remote_name, new_remote_url)
