@@ -41,7 +41,7 @@ repos:
   - id: prettier
     types_or: [html, css, javascript]
     files: ^src/git_account_manager/static/.*\.(html|css|js)$
-    args: [--tab-width, '4']
+    args: [--tab-width, '4', --cache]
     additional_dependencies:
     - prettier@4.0.0-alpha.8
 
