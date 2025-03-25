@@ -1,15 +1,15 @@
 // UI Utility Functions
 function show_loading() {
-    document.getElementById('loading_overlay').style.display = 'flex';
+    document.getElementById("loading_overlay").style.display = "flex";
 }
 
 function hide_loading() {
-    document.getElementById('loading_overlay').style.display = 'none';
+    document.getElementById("loading_overlay").style.display = "none";
 }
 
-function show_toast(message, type = 'success') {
-    const toast_container = document.querySelector('.toast_container');
-    const toast = document.createElement('div');
+function show_toast(message, type = "success") {
+    const toast_container = document.querySelector(".toast_container");
+    const toast = document.createElement("div");
     toast.className = `toast show bg-${type} text-white`;
     toast.innerHTML = `
         <div class="toast-body d-flex justify-content-between align-items-center">
@@ -23,42 +23,49 @@ function show_toast(message, type = 'success') {
 
 async function show_confirm_dialog(message) {
     return new Promise((resolve) => {
-        const modal = new bootstrap.Modal(document.getElementById('confirmation_modal'));
-        const confirm_button = document.getElementById('confirmation_modal_confirm');
-        document.getElementById('confirmation_modal_body').textContent = message;
+        const modal = new bootstrap.Modal(
+            document.getElementById("confirmation_modal"),
+        );
+        const confirm_button = document.getElementById(
+            "confirmation_modal_confirm",
+        );
+        document.getElementById("confirmation_modal_body").textContent =
+            message;
 
         const handle_confirm = () => {
             modal.hide();
-            confirm_button.removeEventListener('click', handle_confirm);
+            confirm_button.removeEventListener("click", handle_confirm);
             resolve(true);
         };
 
         const handle_hide = () => {
             modal.hide();
-            confirm_button.removeEventListener('click', handle_confirm);
+            confirm_button.removeEventListener("click", handle_confirm);
             resolve(false);
         };
 
-        confirm_button.addEventListener('click', handle_confirm);
-        modal._element.addEventListener('hidden.bs.modal', handle_hide, { once: true });
+        confirm_button.addEventListener("click", handle_confirm);
+        modal._element.addEventListener("hidden.bs.modal", handle_hide, {
+            once: true,
+        });
 
         modal.show();
     });
 }
 
 function format_date_time(utc_date_string) {
-    const date = new Date(utc_date_string + 'Z');
+    const date = new Date(utc_date_string + "Z");
 
     const time = date.toLocaleString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
     });
 
-    const date_str = date.toLocaleString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
+    const date_str = date.toLocaleString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
     });
 
     return `${time}, ${date_str}`;
@@ -75,25 +82,27 @@ async function copy_to_clipboard(text, button_element, success_message) {
         }, 1000);
         show_toast(success_message);
     } catch (error) {
-        show_toast('Failed to copy to clipboard', 'danger');
+        show_toast("Failed to copy to clipboard", "danger");
     }
 }
 
 // Account UI Functions
 function render_accounts(accounts) {
-    const accounts_list = document.getElementById('accounts_list');
-    const account_select = document.getElementById('account_select');
+    const accounts_list = document.getElementById("accounts_list");
+    const account_select = document.getElementById("account_select");
 
     accounts_list.innerHTML = '<h6 class="mb-3">Existing Accounts</h6>';
     account_select.innerHTML = '<option value="">Select an account</option>';
 
-    accounts.forEach(account => {
+    accounts.forEach((account) => {
         render_account(account, accounts_list, account_select);
     });
 }
 
 function render_account(account, accounts_list, account_select) {
-    const hidden_key = account.public_key ? '••••••••••••••••' : 'No public key available';
+    const hidden_key = account.public_key
+        ? "••••••••••••••••"
+        : "No public key available";
     accounts_list.innerHTML += generate_account_html(account, hidden_key);
     account_select.innerHTML += `
         <option value="${account.id}">${account.name} (${account.account_type})</option>
@@ -106,24 +115,36 @@ function generate_account_html(account, hidden_key) {
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <h6 class="mb-1">${account.name}</h6>
-                    <span class="badge bg-${account.account_type === 'work' ? 'primary' : 'success'}">
+                    <span class="badge bg-${
+                        account.account_type === "work" ? "primary" : "success"
+                    }">
                         ${account.account_type}
                     </span>
                 </div>
                 <div>
-                    <button onclick="handle_delete_account(${account.id})" class="btn btn-danger btn-sm">
+                    <button onclick="handle_delete_account(${
+                        account.id
+                    })" class="btn btn-danger btn-sm">
                         Delete
                     </button>
                 </div>
             </div>
             <p class="mb-1 mt-2">Email: ${account.email}</p>
-            <small class="text-muted">Created: ${format_date_time(account.created_at)}</small>
+            <small class="text-muted">Created: ${format_date_time(
+                account.created_at,
+            )}</small>
             <div class="public_key mt-2">
                 <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="key_content" id="key_${account.id}">${hidden_key}</span>
-                    ${account.public_key ? generate_key_buttons_html(account) : ''}
+                    <span class="key_content" id="key_${
+                        account.id
+                    }">${hidden_key}</span>
+                    ${
+                        account.public_key
+                            ? generate_key_buttons_html(account)
+                            : ""
+                    }
                 </div>
-                ${account.public_key ? generate_ssh_section_html(account) : ''}
+                ${account.public_key ? generate_ssh_section_html(account) : ""}
             </div>
         </div>
     `;
@@ -132,11 +153,15 @@ function generate_account_html(account, hidden_key) {
 function generate_key_buttons_html(account) {
     return `
         <button class="btn btn-sm btn-outline-secondary"
-                onclick="handle_copy_key('${account.id}', '${account.public_key.replace(/'/g, "\\'")}')">
+                onclick="handle_copy_key('${
+                    account.id
+                }', '${account.public_key.replace(/'/g, "\\'")}')">
             <i class="bi bi-clipboard"></i>
         </button>
         <button class="btn btn-sm btn-outline-secondary"
-                onclick="handle_toggle_key('${account.id}', '${account.public_key.replace(/'/g, "\\'")}')">
+                onclick="handle_toggle_key('${
+                    account.id
+                }', '${account.public_key.replace(/'/g, "\\'")}')">
             <i class="bi bi-eye"></i>
         </button>
     `;
@@ -179,10 +204,10 @@ function generate_ssh_section_html(account) {
 
 // Project UI Functions
 function render_projects(projects) {
-    const projects_list = document.getElementById('projects_list');
+    const projects_list = document.getElementById("projects_list");
     projects_list.innerHTML = '<h6 class="mb-3">Configured Projects</h6>';
 
-    projects.forEach(project => {
+    projects.forEach((project) => {
         render_project(project, projects_list);
     });
 }
@@ -196,16 +221,22 @@ function render_project(project, projects_list) {
                     <small class="text-muted">Path: ${project.path}</small>
                 </div>
                 <div>
-                    <button onclick="handle_validate_project(${project.id})" class="btn btn-outline-primary btn-sm me-2">
+                    <button onclick="handle_validate_project(${
+                        project.id
+                    })" class="btn btn-outline-primary btn-sm me-2">
                         Validate
                     </button>
-                    <button onclick="handle_delete_project(${project.id})" class="btn btn-danger btn-sm">
+                    <button onclick="handle_delete_project(${
+                        project.id
+                    })" class="btn btn-danger btn-sm">
                         Delete
                     </button>
                 </div>
             </div>
             <div class="mt-2">
-                <small class="text-muted">Created: ${format_date_time(project.created_at)}</small>
+                <small class="text-muted">Created: ${format_date_time(
+                    project.created_at,
+                )}</small>
             </div>
         </div>
     `;
@@ -218,9 +249,9 @@ export const ui = {
     show_confirm_dialog,
     copy_to_clipboard,
     accounts: {
-        render: render_accounts
+        render: render_accounts,
     },
     projects: {
-        render: render_projects
-    }
+        render: render_projects,
+    },
 };
