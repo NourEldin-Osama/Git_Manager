@@ -6,7 +6,7 @@ class GitManager:
     @staticmethod
     def validate_git_repo(path: Path) -> bool:
         try:
-            command = "git rev-parse --is-inside-work-tree"  # Check if inside a git repository
+            command = "git rev-parse --is-inside-work-tree".split()  # Check if inside a git repository
             subprocess.run(command, cwd=path, capture_output=True, check=True)
             return True
         except subprocess.CalledProcessError:
@@ -16,7 +16,7 @@ class GitManager:
     def get_remote_url(path: Path) -> tuple[str, str] | None:
         try:
             urls = dict()
-            command = "git remote -v"
+            command = "git remote -v".split()
             result = subprocess.run(command, cwd=path, capture_output=True, text=True, check=True)
             for line in result.stdout.splitlines():
                 line = line.strip()
@@ -162,7 +162,7 @@ class GitManager:
             new_url = f"git@github-{account_name}-{account_type}:{repo_path}.git"
 
             # Update remote
-            command = f"git remote add {remote} {new_url}"
+            command = f"git remote add {remote} {new_url}".split()
             subprocess.run(command, cwd=path, check=True)
             return True
         except (subprocess.CalledProcessError, IndexError):
@@ -174,7 +174,7 @@ class GitManager:
         Removes remote from git repository
         """
         try:
-            command = f"git remote remove {remote}"
+            command = f"git remote remove {remote}".split()
             subprocess.run(command, cwd=path, check=True)
             return True
         except subprocess.CalledProcessError:
@@ -186,7 +186,7 @@ class GitManager:
         Validates SSH connection to the host
         """
         try:
-            command = f"ssh -T {host}"
+            command = f"ssh -T {host}".split()
             subprocess.run(command, cwd=path, check=True)
             return True
         except subprocess.CalledProcessError:
@@ -198,8 +198,8 @@ class GitManager:
         Sets git config value for the repository
         """
         try:
-            command = f"git config {key} '{value}'"
-            subprocess.run(command, cwd=path, check=True, shell=True)
+            command = f"git config {key} '{value}'".split()
+            subprocess.run(command, cwd=path, check=True)
             return True
         except subprocess.CalledProcessError:
             return False
