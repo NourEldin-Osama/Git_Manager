@@ -187,9 +187,13 @@ class GitManager:
         """
         try:
             command = f"ssh -T {host}".split()
-            subprocess.run(command, cwd=path, check=True)
-            return True
-        except subprocess.CalledProcessError:
+            result = subprocess.run(command, cwd=path, check=False, text=True, capture_output=True)
+            # Check if the output contains "successfully authenticated"
+            if "successfully authenticated" in result.stderr:
+                return True
+            return False
+        except subprocess.CalledProcessError as error:
+            print("SSH connection failed", "Error:", error)
             return False
 
     @staticmethod

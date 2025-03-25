@@ -8,15 +8,16 @@ from .ssh_manager import SSH_CONFIG_PATH, generate_ssh_key, read_public_key, upd
 
 
 def create_git_account(account: Account, overwrite: bool = False) -> tuple[str, str]:
+    account_type = account.account_type.value
     # Generate SSH key
-    key_path = generate_ssh_key(account.name, account.email, account.account_type, overwrite)
+    key_path = generate_ssh_key(account.name, account.email, account_type, overwrite)
     ssh_key_path = str(key_path)
 
     # Read public key
     public_key, _ = read_public_key(key_path)
 
     # Update SSH config
-    update_ssh_config(account.name, account.account_type, key_path)
+    update_ssh_config(account.name, account_type, key_path)
 
     return ssh_key_path, public_key
 
@@ -101,11 +102,19 @@ def configure_project(project: Project, account: Account) -> Project:
     if not GitManager.validate_remote_url(remote_url):
         raise ValueError(f"Invalid remote URL: {remote_url}")
 
+    account_type = account.account_type.value
+    print(
+        f"""
+        Configuring project {project.name} with remote URL: {remote_url},
+        remote name: {remote_name}, account: {account.name}, email: {account.email},
+        SSH key path: {account.ssh_key_path}, public key: {account.public_key}, account type: {account_type}
+        """
+    )
     # Update remote URL
     success = GitManager.update_remote_url(
         path,
         account.name,
-        account.account_type,
+        account_type,
         remote_url,
         remote_name,
     )
@@ -142,4 +151,5 @@ def validate_project_configuration(project: Project) -> None:
     path = Path(project.path).expanduser()
     host = project.remote_url.split(":")[0]
 
-    GitManager.validate_ssh_connection(path=path, host=host)
+    if not GitManager.validate_ssh_connection(path=path, host=host):
+        raise ValueError(f"SSH connection to {host} failed")
