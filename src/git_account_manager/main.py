@@ -24,3 +24,19 @@ app.include_router(accounts.router)
 app.include_router(projects.router)
 
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
+
+def main() -> None:
+    """Start the FastAPI application server.
+
+    This function initializes and starts the FastAPI server with the following configuration:
+    - Host: 127.0.0.1 (localhost)
+    - Port: 8000
+    """
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,16 +1,19 @@
 [project]
 name = "git_account_manager"
 version = "0.1.0"
-description = "Add your description here"
+description = "A simple tool to manage your git accounts"
 readme = "README.md"
 authors = [
     {name = "NourEldin", email = "noureldin.osama.saad@gmail.com"}
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi[all]>=0.115.11",
     "sqlmodel>=0.0.24"
 ]
+
+[project.scripts]
+git-manager = "git_account_manager.main:main"
 
 [dependency-groups]
 dev = [

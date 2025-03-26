@@ -3,6 +3,7 @@
 
 .venv/
 __pycache__/
+dist/
 *.py[cod]
 *.pyo
 *.pyd
@@ -14,7 +15,5 @@ __pycache__/
 
 .ruff_cache/
 .pytest_cache/
-
-test/
 
 node_modules/
