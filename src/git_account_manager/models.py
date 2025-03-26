@@ -14,11 +14,32 @@ def get_current_time():
 
 
 class AccountBase(SQLModel):
-    name: str = Field(index=True)
-    email: str | None = Field(default=None, index=True)
-    account_type: Account_Type = Field(default=Account_Type.PERSONAL)
-    ssh_key_path: str | None = Field(default=None, index=True)
-    public_key: str | None = Field(default=None, index=True)
+    name: str = Field(
+        index=True,
+        description="Name of the Git account",
+        schema_extra={"examples": ["NourEldin", "John Doe", "Jane Smith", "Ali Ahmed"]},
+    )
+    email: str | None = Field(
+        default=None,
+        index=True,
+        description="Email associated with the Git account",
+        schema_extra={"examples": ["noureldin@gmail.com", "john.doe@example.com", "jane.smith@example.com"]},
+    )
+    account_type: Account_Type = Field(
+        default=Account_Type.PERSONAL,
+        description="Type of account (personal/work)",
+        schema_extra={"examples": ["work", "personal"]},
+    )
+    ssh_key_path: str | None = Field(
+        default=None,
+        index=True,
+        description="Path to the SSH private key",
+    )
+    public_key: str | None = Field(
+        default=None,
+        index=True,
+        description="SSH public key content",
+    )
 
 
 class Account(AccountBase, table=True):
@@ -47,11 +68,32 @@ class AccountUpdate(SQLModel):
 
 
 class ProjectBase(SQLModel):
-    path: str = Field(index=True)
-    name: str = Field(index=True)
-    account_id: int | None = Field(default=None, foreign_key="account.id")
-    remote_url: str | None = Field(default=None, index=True)
-    remote_name: str | None = Field(default=None, index=True)
+    path: str = Field(
+        index=True,
+        description="Local path to the Git repository",
+        schema_extra={"examples": ["N:/Transcriber", "/path/to/repo"]},
+    )
+    name: str = Field(
+        index=True, description="Name of the project", schema_extra={"examples": ["Transcriber", "backend-api"]}
+    )
+    account_id: int | None = Field(
+        default=None,
+        foreign_key="account.id",
+        description="ID of the associated Git account",
+        schema_extra={"examples": [1, 2]},
+    )
+    remote_url: str | None = Field(
+        default=None,
+        index=True,
+        description="Git remote repository URL",
+        schema_extra={"examples": ["git@github.com:username/my-project.git"]},
+    )
+    remote_name: str | None = Field(
+        default=None,
+        index=True,
+        description="Name of the Git remote",
+        schema_extra={"examples": ["origin", "upstream", "github"]},
+    )
 
 
 class Project(ProjectBase, table=True):
