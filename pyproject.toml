@@ -1,7 +1,7 @@
 [project]
 name = "git-account-manager"
 version = "0.1.1"
-description = "A simple tool to manage your Git accounts and projects"
+description = "A tool to manage multiple Git accounts and projects"
 readme = "README.md"
 authors = [
     {name = "NourEldin", email = "noureldin.osama.saad@gmail.com"}

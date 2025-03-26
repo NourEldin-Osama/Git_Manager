@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from . import __version__
 from .database import create_db_and_tables
 from .routers import accounts, projects
 
@@ -15,7 +16,24 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title="Git Account Manager API",
+    description="""
+    A tool to manage multiple Git accounts and projects.
+
+    Features:
+    - Manage multiple Git accounts (personal/work)
+    - Configure SSH keys for different accounts
+    - Associate Git projects with specific accounts
+    - Synchronize SSH configurations
+    """,
+    version=__version__,
+    contact={
+        "name": "NourEldin",
+        "email": "noureldin.osama.saad@gmail.com",
+    },
+)
 PROJECT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = PROJECT_DIR / "static"
 

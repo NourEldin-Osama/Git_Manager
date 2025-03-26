@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
 
 from ..dependencies import SessionDependency
@@ -13,10 +13,22 @@ from ..models import (
 )
 from ..services import create_git_account, list_accounts_ssh_config
 
-router = APIRouter(prefix="/accounts", tags=["accounts"])
+router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
-@router.post("", response_model=AccountPublic)
+@router.post(
+    "",
+    response_model=AccountPublic,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new Git account",
+    description="""
+    Creates a new Git account with the following steps:
+    1. Validates that the account doesn't already exist
+    2. Generates SSH key pair for the account
+    3. Configures SSH settings
+    4. Stores account information in the database
+    """,
+)
 async def create_account(account: AccountCreate, session: SessionDependency):
     try:
         account_db = Account.model_validate(account)
@@ -39,7 +51,12 @@ async def create_account(account: AccountCreate, session: SessionDependency):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("", response_model=list[AccountPublic])
+@router.get(
+    "",
+    response_model=list[AccountPublic],
+    summary="List all Git accounts",
+    description="Retrieves a list of all Git accounts with pagination support.",
+)
 async def read_accounts(
     session: SessionDependency,
     offset: int = 0,
@@ -48,7 +65,12 @@ async def read_accounts(
     return session.exec(select(Account).offset(offset).limit(limit)).all()
 
 
-@router.get("/{account_id}", response_model=AccountPublicWithProjects)
+@router.get(
+    "/{account_id}",
+    response_model=AccountPublicWithProjects,
+    summary="Get a specific Git account",
+    description="Retrieves detailed information about a specific Git account including associated projects.",
+)
 async def read_account(account_id: int, session: SessionDependency):
     account = session.get(Account, account_id)
     if not account:
@@ -56,7 +78,15 @@ async def read_account(account_id: int, session: SessionDependency):
     return account
 
 
-@router.patch("/{account_id}", response_model=AccountPublic)
+@router.patch(
+    "/{account_id}",
+    response_model=AccountPublic,
+    summary="Update a Git account",
+    description="""
+    Updates an existing Git account's information.
+    Only provided fields will be updated.
+    """,
+)
 async def update_account(account_id: int, account: AccountUpdate, session: SessionDependency):
     account_db = session.get(Account, account_id)
     if not account_db:
@@ -69,7 +99,12 @@ async def update_account(account_id: int, account: AccountUpdate, session: Sessi
     return account_db
 
 
-@router.delete("/{account_id}")
+@router.delete(
+    "/{account_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Delete a Git account",
+    description="Deletes a Git account and its associated data.",
+)
 async def delete_account(account_id: int, session: SessionDependency):
     account = session.get(Account, account_id)
     if not account:
@@ -79,7 +114,16 @@ async def delete_account(account_id: int, session: SessionDependency):
     return {"message": "Account deleted successfully"}
 
 
-@router.post("/sync-ssh-config")
+@router.post(
+    "/sync-ssh-config",
+    summary="Synchronize SSH configuration",
+    description="""
+    Synchronizes the SSH configuration with the database by:
+    1. Reading the current SSH config file
+    2. Updating account information in the database
+    3. Ensuring SSH configurations are up to date
+    """,
+)
 async def sync_ssh_config(session: SessionDependency):
     try:
         accounts = list_accounts_ssh_config(session)
