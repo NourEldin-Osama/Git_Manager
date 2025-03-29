@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .database import create_db_and_tables
-from .routers import accounts, projects
+from .routers import accounts, folder_select, projects
 
 
 @asynccontextmanager
@@ -34,12 +34,14 @@ app = FastAPI(
         "email": "noureldin.osama.saad@gmail.com",
     },
 )
-PROJECT_DIR = Path(__file__).resolve().parent
-STATIC_DIR = PROJECT_DIR / "static"
+
+# Set the static directory to serve frontend files
+STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 
 
 app.include_router(accounts.router)
 app.include_router(projects.router)
+app.include_router(folder_select.router)
 
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 

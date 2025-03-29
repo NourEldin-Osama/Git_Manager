@@ -139,15 +139,31 @@ async function handle_project_validation(project_id) {
 
 async function handle_directory_selection() {
     try {
-        const directory_handle = await window.showDirectoryPicker();
-        $("#project_path").val(directory_handle.name);
-    } catch (error) {
-        if (error.name !== "AbortError") {
-            ui.notifications.show(
-                "Failed to select directory: " + error.message,
-                "danger",
-            );
+        ui.loading.show();
+        const response = await fetch('/folder-select/dialog', {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
         }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            $("#project_path").val(data.path);
+        } else if (data.status === 'cancelled') {
+            console.log('Folder selection cancelled');
+        } else {
+            throw new Error(data.message || 'Unknown error');
+        }
+    } catch (error) {
+        ui.notifications.show(
+            "Failed to select directory: " + error.message,
+            "danger"
+        );
+    } finally {
+        ui.loading.hide();
     }
 }
 

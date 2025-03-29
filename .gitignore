@@ -1,19 +1,4 @@
-.idea/
 .vscode/
-
-.venv/
-__pycache__/
-dist/
-*.py[cod]
-*.pyo
-*.pyd
-*.db
-*.sqlite
-*.egg-info/
-*.egg
-*.log
-
-.ruff_cache/
-.pytest_cache/
+.idea/
 
 node_modules/
