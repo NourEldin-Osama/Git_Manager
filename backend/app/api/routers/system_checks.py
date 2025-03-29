@@ -1,19 +1,17 @@
 import platform
 import shutil
 import subprocess
-from typing import Any
 
 from fastapi import APIRouter
 
 # Fix the router prefix to match the app structure
 router = APIRouter(
-    prefix="/system",
     tags=["system"],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/health", response_model=dict[str, Any])
+@router.get("/health_check")
 async def health_check():
     """
     Check if the backend service is running and healthy.
@@ -21,15 +19,10 @@ async def health_check():
     Returns:
         dict: Status information including service status and version
     """
-    return {
-        "status": "ok",
-        "service": "Git Account Manager API",
-        "platform": platform.system(),
-        "python_version": platform.python_version(),
-    }
+    return {"status": "ok", "service": "Git Account Manager API"}
 
 
-@router.get("/check")
+@router.get("/check_prerequisites")
 async def check_prerequisites():
     """
     Check if all required system prerequisites are installed.
@@ -65,5 +58,10 @@ async def check_prerequisites():
     return {
         "git": git_installed,
         "ssh": ssh_installed,
-        "details": {"git_version": git_version, "ssh_version": ssh_version},
+        "details": {
+            "git_version": git_version,
+            "ssh_version": ssh_version,
+            "platform": platform.system(),
+            "python_version": platform.python_version(),
+        },
     }
