@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session
 
-from .database import engine
+from app.core.database import engine
 
 
 def get_session():

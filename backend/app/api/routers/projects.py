@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
 
-from ..dependencies import SessionDependency
-from ..models import (
+from app.api.dependencies import SessionDependency
+from app.models import (
     Account,
     Project,
     ProjectCreate,
@@ -12,7 +12,7 @@ from ..models import (
     ProjectPublicWithAccount,
     ProjectUpdate,
 )
-from ..services import configure_project, validate_project_configuration
+from app.utils.services import configure_project, validate_project_configuration
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 

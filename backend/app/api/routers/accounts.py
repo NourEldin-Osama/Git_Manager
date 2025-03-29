@@ -3,15 +3,15 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
 
-from ..dependencies import SessionDependency
-from ..models import (
+from app.api.dependencies import SessionDependency
+from app.models import (
     Account,
     AccountCreate,
     AccountPublic,
     AccountPublicWithProjects,
     AccountUpdate,
 )
-from ..services import create_git_account, list_accounts_ssh_config
+from app.utils.services import create_git_account, list_accounts_ssh_config
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 

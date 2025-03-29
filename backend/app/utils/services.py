@@ -2,9 +2,9 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
-from .git_manager import GitManager
-from .models import Account, Project
-from .ssh_manager import SSH_CONFIG_PATH, generate_ssh_key, read_public_key, update_ssh_config
+from app.models import Account, Project
+from app.utils.git_manager import GitManager
+from app.utils.ssh_manager import SSH_CONFIG_PATH, generate_ssh_key, read_public_key, update_ssh_config
 
 
 def create_git_account(account: Account, overwrite: bool = False) -> tuple[str, str]:

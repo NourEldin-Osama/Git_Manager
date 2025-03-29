@@ -12,9 +12,6 @@ dependencies = [
     "sqlmodel>=0.0.24"
 ]
 
-[project.scripts]
-git-manager = "app.main:main"
-
 [dependency-groups]
 dev = [
     "pre-commit",
@@ -44,5 +41,5 @@ extend-select = [
 extend-ignore = ["RUF001", "B904", "B008"]
 
 [build-system]
-requires = ["uv_build"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
