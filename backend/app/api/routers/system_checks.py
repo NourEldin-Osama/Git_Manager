@@ -4,7 +4,6 @@ import subprocess
 
 from fastapi import APIRouter
 
-# Fix the router prefix to match the app structure
 router = APIRouter(
     tags=["system"],
     responses={404: {"description": "Not found"}},
@@ -48,10 +47,9 @@ async def check_prerequisites():
     ssh_version = None
     if ssh_installed:
         try:
-            result = subprocess.run(
-                ["ssh", "-V"], capture_output=True, text=True, stderr=subprocess.STDOUT, check=False
-            )
-            ssh_version = result.stdout.strip() if result.returncode == 0 else result.stderr.strip()
+            result = subprocess.run(["ssh", "-V"], capture_output=True, text=True, check=False)
+            # SSH version is typically printed to stderr
+            ssh_version = result.stderr.strip() if result.stderr else result.stdout.strip()
         except Exception:
             ssh_installed = False
 
