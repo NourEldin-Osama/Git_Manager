@@ -5,20 +5,10 @@ import subprocess
 from fastapi import APIRouter
 
 router = APIRouter(
+    prefix="/system",
     tags=["system"],
     responses={404: {"description": "Not found"}},
 )
-
-
-@router.get("/health_check")
-async def health_check():
-    """
-    Check if the backend service is running and healthy.
-
-    Returns:
-        dict: Status information including service status and version
-    """
-    return {"status": "ok", "service": "Git Account Manager API"}
 
 
 @router.get("/check_prerequisites")
