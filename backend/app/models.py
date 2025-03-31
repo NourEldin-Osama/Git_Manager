@@ -1,34 +1,81 @@
-from datetime import UTC, datetime
-from enum import Enum
+from datetime import datetime
 
+import sqlalchemy as sa
+from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
 
-class Account_Type(str, Enum):
-    PERSONAL = "personal"
-    WORK = "work"
+class TimestampMixin(SQLModel):
+    created_at: datetime | None = Field(
+        default=None,
+        sa_type=sa.DateTime(timezone=True),
+        sa_column_kwargs={"server_default": sa.func.now()},
+        nullable=False,
+    )
+
+    updated_at: datetime | None = Field(
+        default=None,
+        sa_type=sa.DateTime(timezone=True),
+        sa_column_kwargs={"server_default": sa.func.now(), "onupdate": sa.func.now()},
+    )
 
 
-def get_current_time():
-    return datetime.now(UTC)
+class TableMixin(TimestampMixin):
+    id: int | None = Field(default=None, primary_key=True)
+
+
+class AccountTypeBase(SQLModel):
+    name: str = Field(
+        ...,
+        unique=True,
+        index=True,
+        description="Account type, e.g., personal or work",
+        schema_extra={"examples": ["personal", "work"]},
+    )
+
+
+class AccountType(TableMixin, AccountTypeBase, table=True):
+    accounts: list["Account"] = Relationship(back_populates="account_type")
+
+    __tablename__ = "account_type"
+
+
+class AccountTypeCreate(AccountTypeBase):
+    pass
+
+
+class AccountTypeUpdate(AccountTypeBase):
+    pass
+
+
+class AccountTypePublic(AccountTypeBase):
+    pass
 
 
 class AccountBase(SQLModel):
     name: str = Field(
+        ...,
+        unique=True,
         index=True,
-        description="Name of the Git account",
-        schema_extra={"examples": ["NourEldin", "John Doe", "Jane Smith", "Ali Ahmed"]},
+        description="Name of the account for displaying in the UI",
+        schema_extra={"examples": ["NourEldin Account", "My Account", "Open Source Account"]},
     )
-    email: str | None = Field(
-        default=None,
+    user_name: str = Field(
+        ...,
         index=True,
-        description="Email associated with the Git account",
-        schema_extra={"examples": ["noureldin@gmail.com", "john.doe@example.com", "jane.smith@example.com"]},
+        description="Name of the user associated with this account for git config",
+        schema_extra={"examples": ["NourEldin", "John Doe", "Jane Smith"]},
     )
-    account_type: Account_Type = Field(
-        default=Account_Type.PERSONAL,
-        description="Type of account (personal/work)",
-        schema_extra={"examples": ["work", "personal"]},
+    user_email: EmailStr = Field(
+        ...,
+        index=True,
+        description="Email address for the user associated with this account for git config",
+        schema_extra={"examples": ["example_user@example_domain.com"]},
+    )
+    account_type_id: int = Field(
+        ...,
+        foreign_key="account_type.id",
+        description="ID of the account type",
     )
     ssh_key_path: str | None = Field(
         default=None,
@@ -42,27 +89,29 @@ class AccountBase(SQLModel):
     )
 
 
-class Account(AccountBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=get_current_time)
-    updated_at: datetime = Field(default_factory=get_current_time)
+class Account(TableMixin, AccountBase, table=True):
     projects: list["Project"] = Relationship(back_populates="account")
+    account_type: AccountType | None = Relationship(back_populates="accounts")
 
 
 class AccountCreate(AccountBase):
-    pass
+    account_type_name: str | None = Field(
+        default="personal", description="Name of the account type (e.g., 'personal', 'work')"
+    )
 
 
 class AccountPublic(AccountBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    account_type: AccountTypePublic | None = None
 
 
 class AccountUpdate(SQLModel):
     name: str | None = None
-    email: str | None = None
-    account_type: Account_Type | None = None
+    account_type_id: int | None = None
+    user_name: str | None = None
+    user_email: EmailStr | None = None
     ssh_key_path: str | None = None
     public_key: str | None = None
 
@@ -74,7 +123,9 @@ class ProjectBase(SQLModel):
         schema_extra={"examples": ["N:/Transcriber", "/path/to/repo"]},
     )
     name: str = Field(
-        index=True, description="Name of the project", schema_extra={"examples": ["Transcriber", "backend-api"]}
+        index=True,
+        description="Name of the project",
+        schema_extra={"examples": ["Transcriber", "backend-api"]},
     )
     account_id: int | None = Field(
         default=None,
@@ -96,10 +147,7 @@ class ProjectBase(SQLModel):
     )
 
 
-class Project(ProjectBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=get_current_time)
-    updated_at: datetime = Field(default_factory=get_current_time)
+class Project(TableMixin, ProjectBase, table=True):
     account: Account | None = Relationship(back_populates="projects")
     configured: bool = Field(default=False)
 

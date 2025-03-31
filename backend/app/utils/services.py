@@ -2,15 +2,37 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
-from app.models import Account, Project
+from app.models import Account, AccountType, Project
 from app.utils.git_manager import GitManager
 from app.utils.ssh_manager import SSH_CONFIG_PATH, generate_ssh_key, read_public_key, update_ssh_config
 
 
+def get_or_create_account_type(session: Session, account_type_name: str) -> AccountType:
+    """
+    Get an existing account type by name or create a new one if it doesn't exist.
+
+    Args:
+        session: Database session
+        account_type_name: Name of the account type to get or create
+
+    Returns:
+        The AccountType object (either existing or newly created)
+    """
+    account_type_object = session.exec(select(AccountType).where(AccountType.name == account_type_name)).first()
+
+    if not account_type_object:
+        account_type_object = AccountType(name=account_type_name)
+        session.add(account_type_object)
+        session.commit()
+        session.refresh(account_type_object)
+
+    return account_type_object
+
+
 def create_git_account(account: Account, overwrite: bool = False) -> tuple[str, str]:
-    account_type = account.account_type.value
+    account_type = account.account_type.name
     # Generate SSH key
-    key_path = generate_ssh_key(account.name, account.email, account_type, overwrite)
+    key_path = generate_ssh_key(account.name, account.user_email, account_type, overwrite)
     ssh_key_path = str(key_path)
 
     # Read public key
@@ -51,12 +73,17 @@ def list_accounts_ssh_config(session: Session) -> list[dict]:
                 existing = session.exec(select(Account).where(Account.name == current_host)).first()
 
                 if not existing and current_email:
+                    # Get or create account type
+                    account_type_object = get_or_create_account_type(session, account_type)
+
+                    # Create account with user and account type
                     new_account = Account(
                         name=current_host,
-                        email=current_email,
+                        user_name=current_host,
+                        user_email=current_email,
                         ssh_key_path=str(identity_file),
                         public_key=public_key_content,
-                        account_type=account_type,
+                        account_type_id=account_type_object.id,
                     )
                     session.add(new_account)
                     session.commit()
@@ -130,7 +157,7 @@ def configure_project(project: Project, account: Account) -> Project:
 
     remote_url, remote_name = get_remote_info(path, project)
     repo_path = validate_remote_url_and_path(remote_url)
-    account_type = account.account_type.value
+    account_type = account.account_type.name
 
     # Construct new SSH URL using SSH config host
     new_remote_url = f"git@github-{account.name}-{account_type}:{repo_path}.git"
@@ -141,7 +168,7 @@ def configure_project(project: Project, account: Account) -> Project:
         f"New remote URL: {new_remote_url},\n"
         f"remote name: {remote_name},\n"
         f"account: {account.name}, account type: {account_type},\n"
-        f"email: {account.email}, name: {account.name},\n"
+        f"email: {account.user_email}, name: {account.name},\n"
         f"SSH key path: {account.ssh_key_path},\n"
         f"public key: {account.public_key}"
     )
@@ -155,11 +182,11 @@ def configure_project(project: Project, account: Account) -> Project:
     project.remote_name = remote_name
 
     # Check account name and email
-    if not account.name or not account.email:
+    if not account.name or not account.user_email:
         raise ValueError("Account name and email must be set")
 
     # Set Git user config for the project
-    if not GitManager.set_user_config(path, account.name, account.email):
+    if not GitManager.set_user_config(path, account.name, account.user_email):
         raise ValueError(f"Failed to set Git user config for project: {path}")
 
     # Update project in database

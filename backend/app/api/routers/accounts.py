@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlmodel import select
+from sqlmodel import or_, select
 
 from app.api.dependencies import SessionDependency
 from app.models import (
@@ -11,7 +11,7 @@ from app.models import (
     AccountPublicWithProjects,
     AccountUpdate,
 )
-from app.utils.services import create_git_account, list_accounts_ssh_config
+from app.utils.services import create_git_account, get_or_create_account_type, list_accounts_ssh_config
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -24,22 +24,30 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
     description="""
     Creates a new Git account with the following steps:
     1. Validates that the account doesn't already exist
-    2. Generates SSH key pair for the account
-    3. Configures SSH settings
-    4. Stores account information in the database
+    2. Creates or gets associated AccountType
+    3. Generates SSH key pair for the account
+    4. Configures SSH settings
+    5. Stores account information in the database
     """,
 )
 async def create_account(account: AccountCreate, session: SessionDependency):
     try:
-        account_db = Account.model_validate(account)
-
         # Check if account already exists
         existing = session.exec(
-            select(Account).where(Account.name == account_db.name, Account.email == account_db.email)
+            select(Account).where(or_(Account.name == account.name, Account.user_email == account.user_email))
         ).first()
         if existing:
             raise HTTPException(status_code=400, detail="Account already exists")
 
+        # Get or create account type using the reusable function
+        account_type_name = account.account_type_name or "personal"
+        account_type = get_or_create_account_type(session, account_type_name)
+
+        # Create account
+        account_db = Account.model_validate(account)
+        account_db.account_type_id = account_type.id
+
+        # Now create the account with SSH key
         ssh_key_path, public_key = create_git_account(account_db)
         account_db.ssh_key_path = ssh_key_path
         account_db.public_key = public_key

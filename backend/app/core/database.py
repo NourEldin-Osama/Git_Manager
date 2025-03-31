@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from sqlmodel import SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
+
+from app.models import AccountType
 
 # Create database URL in user's home directory (.git-account-manager)
 USER_HOME = Path.home()
@@ -19,3 +21,15 @@ engine = create_engine(
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    create_default_account_types()
+
+
+def create_default_account_types():
+    with Session(engine) as session:
+        # Check if any Account Type exists
+        existing = session.exec(select(AccountType)).first()
+        if existing is None:
+            # Pre-fill with default account types
+            session.add(AccountType(name="personal"))
+            session.add(AccountType(name="work"))
+            session.commit()
