@@ -2,244 +2,254 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { GitAccount } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { GitAccount, AccountCreate, AccountType } from "@/lib/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog"
-import { Key, AlertCircle, Loader2 } from "lucide-react"
+import { Key, AlertCircle, Plus } from "lucide-react"
+import { siGithub } from "simple-icons/icons"
+import { api } from "@/lib/backend_config"
+import { toast } from "sonner"
+import { AccountTypeDialog } from "./account-type-dialog"
 
 interface AccountFormProps {
-  account?: GitAccount
-  onSubmit: (account: GitAccount) => void
-  onCancel: () => void
+    account?: GitAccount
+    onSubmit: (account: GitAccount | AccountCreate) => void
+    onCancel: () => void
 }
 
 export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
-  const [formData, setFormData] = useState<GitAccount>({
-    id: account?.id || "",
-    name: account?.name || "",
-    username: account?.username || "",
-    email: account?.email || "",
-    authType: account?.authType || "ssh",
-    sshKeyPath: account?.sshKeyPath || "",
-    token: account?.token || "",
-  })
-  const [isGeneratingKey, setIsGeneratingKey] = useState(false)
-  const [keyGenError, setKeyGenError] = useState<string | null>(null)
-  const [generatedKey, setGeneratedKey] = useState<string | null>(null)
+    const [formData, setFormData] = useState<Partial<GitAccount | AccountCreate>>({
+        id: account?.id || 0,
+        name: account?.name || "",
+        user_name: account?.user_name || "",
+        user_email: account?.user_email || "",
+        account_type_id: account?.account_type_id || undefined,
+        ssh_key_path: account?.ssh_key_path || "",
+    })
+    const [keyGenError, setKeyGenError] = useState<string | null>(null)
+    const [accountTypes, setAccountTypes] = useState<AccountType[]>([])
+    const [isLoadingAccountTypes, setIsLoadingAccountTypes] = useState(false)
+    const [showCreateAccountType, setShowCreateAccountType] = useState(false)
+    const [isCopied, setIsCopied] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
-  }
+    useEffect(() => {
+        fetchAccountTypes()
+    }, [])
 
-  const handleAuthTypeChange = (value: string) => {
-    setFormData({ ...formData, authType: value as "ssh" | "https" })
-  }
+    const fetchAccountTypes = async () => {
+        setIsLoadingAccountTypes(true)
+        try {
+            const types = await api.accountTypes.list()
+            setAccountTypes(types)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSubmit(formData)
-  }
-
-  const handleGenerateSSHKey = async () => {
-    if (!formData.username || !formData.email) {
-      setKeyGenError("Username and email are required to generate an SSH key")
-      return
+            // Set default account type if not already set
+            if (!formData.account_type_id && types.length > 0) {
+                setFormData(prev => ({
+                    ...prev,
+                    account_type_id: types.find(t => t.name === "personal")?.id || types[0].id
+                }))
+            }
+        } catch (err) {
+            console.error("Failed to fetch account types:", err)
+            toast.error("Error loading account types", {
+                description: err instanceof Error ? err.message : "An error occurred"
+            })
+        } finally {
+            setIsLoadingAccountTypes(false)
+        }
     }
 
-    setIsGeneratingKey(true)
-    setKeyGenError(null)
-
-    try {
-      const response = await fetch("/api/accounts/generate-ssh-key", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.username,
-          email: formData.email,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate SSH key")
-      }
-
-      setFormData({
-        ...formData,
-        sshKeyPath: data.keyPath,
-      })
-
-      setGeneratedKey(data.publicKey)
-    } catch (error) {
-      setKeyGenError(error instanceof Error ? error.message : "Unknown error occurred")
-    } finally {
-      setIsGeneratingKey(false)
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target
+        setFormData({ ...formData, [name]: value })
     }
-  }
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="grid gap-2">
-          <Label htmlFor="name">Account Name</Label>
-          <Input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Work, Personal, etc."
-            required
-          />
-        </div>
+    const handleAccountTypeChange = (value: string) => {
+        // Special case for "new" to show the create dialog
+        if (value === "new") {
+            setShowCreateAccountType(true)
+            return
+        }
 
-        <div className="grid gap-2">
-          <Label htmlFor="username">Git Username</Label>
-          <Input
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            placeholder="Your Git username"
-            required
-          />
-        </div>
+        setFormData({ ...formData, account_type_id: Number(value) })
+    }
 
-        <div className="grid gap-2">
-          <Label htmlFor="email">Git Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="your.email@example.com"
-            required
-          />
-        </div>
+    const handleAccountTypeCreated = (newType: AccountType) => {
+        setAccountTypes([...accountTypes, newType])
+        if (newType.id) {
+            setFormData({ ...formData, account_type_id: newType.id })
+        }
+    }
 
-        <div className="space-y-2">
-          <Label>Authentication Type</Label>
-          <RadioGroup
-            value={formData.authType}
-            onValueChange={handleAuthTypeChange}
-            className="flex flex-col space-y-1"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="ssh" id="ssh" />
-              <Label htmlFor="ssh">SSH Key</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="https" id="https" />
-              <Label htmlFor="https">HTTPS (Token)</Label>
-            </div>
-          </RadioGroup>
-        </div>
+    const handleCopyToClipboard = () => {
+        if (account?.public_key) {
+            navigator.clipboard.writeText(account.public_key)
+            setIsCopied(true)
+            toast.success("Public key copied to clipboard")
 
-        {formData.authType === "ssh" ? (
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="sshKeyPath">SSH Key Path</Label>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateSSHKey}
-                    disabled={isGeneratingKey || !formData.username || !formData.email}
-                  >
-                    {isGeneratingKey ? (
-                      <>
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Key className="mr-2 h-3 w-3" />
-                        Generate New Key
-                      </>
-                    )}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>SSH Key Generated</DialogTitle>
-                    <DialogDescription>
-                      Your new SSH key has been generated. Add this public key to your Git provider.
-                    </DialogDescription>
-                  </DialogHeader>
-                  {generatedKey && (
-                    <div className="bg-muted p-3 rounded-md overflow-auto max-h-[200px]">
-                      <pre className="text-xs">{generatedKey}</pre>
-                    </div>
-                  )}
-                  <DialogFooter>
-                    <Button
-                      onClick={() => {
-                        if (generatedKey) {
-                          navigator.clipboard.writeText(generatedKey)
-                        }
-                      }}
+            setTimeout(() => {
+                setIsCopied(false)
+            }, 2000)
+        }
+    }
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        onSubmit(formData as GitAccount | AccountCreate)
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="name">Account Name</Label>
+                    <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="Work, Personal, etc."
+                        required
+                    />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="user_name">Git Username</Label>
+                    <Input
+                        id="user_name"
+                        name="user_name"
+                        value={formData.user_name}
+                        onChange={handleChange}
+                        placeholder="Your Git username"
+                        required
+                    />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="user_email">Git Email</Label>
+                    <Input
+                        id="user_email"
+                        name="user_email"
+                        type="email"
+                        value={formData.user_email}
+                        onChange={handleChange}
+                        placeholder="your.email@example.com"
+                        required
+                    />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="account_type">Account Type</Label>
+                    <Select
+                        value={formData.account_type_id ? formData.account_type_id.toString() : undefined}
+                        onValueChange={handleAccountTypeChange}
+                        disabled={isLoadingAccountTypes}
                     >
-                      Copy to Clipboard
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <Input
-              id="sshKeyPath"
-              name="sshKeyPath"
-              value={formData.sshKeyPath}
-              onChange={handleChange}
-              placeholder="~/.ssh/id_rsa"
-            />
-            {keyGenError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{keyGenError}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-        ) : (
-          <div className="grid gap-2">
-            <Label htmlFor="token">Personal Access Token</Label>
-            <Input
-              id="token"
-              name="token"
-              type="password"
-              value={formData.token}
-              onChange={handleChange}
-              placeholder="ghp_xxxxxxxxxxxx"
-            />
-          </div>
-        )}
-      </div>
+                        <SelectTrigger id="account_type" className="w-full">
+                            <SelectValue placeholder={
+                                isLoadingAccountTypes ? "Loading account types..." : "Select account type"
+                            } />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {accountTypes.map((type) => (
+                                <SelectItem key={type.id || `type-${type.name}`} value={type.id!.toString()}>
+                                    {type.name}
+                                </SelectItem>
+                            ))}
+                            <SelectItem value="new" className="text-primary flex items-center gap-2">
+                                <Plus className="h-4 w-4" />
+                                Create new type
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-      <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{account ? "Update" : "Add"} Account</Button>
-      </div>
-    </form>
-  )
+                {account && (
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <Label htmlFor="ssh_key_path">SSH Key Path (Optional)</Label>
+                            {account?.public_key && (
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button type="button" variant="outline" size="sm">
+                                            <Key className="mr-2 h-3 w-3" />
+                                            View Public Key
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>SSH Public Key</DialogTitle>
+                                            <DialogDescription>
+                                                Add this public key to your Git provider.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="bg-muted p-3 rounded-md overflow-auto max-h-[200px]">
+                                            <pre className="text-xs">{account.public_key}</pre>
+                                        </div>
+                                        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                                            <Button
+                                                variant="outline"
+                                                className="flex items-center gap-2"
+                                                onClick={() => window.open("https://github.com/settings/ssh/new", "_blank")}
+                                            >
+                                                <svg role="img" viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                                                    <path d={siGithub.path} />
+                                                </svg>
+                                                Add SSH Key to GitHub
+                                            </Button>
+                                            <Button
+                                                onClick={handleCopyToClipboard}
+                                            >
+                                                {isCopied ? "Copied!" : "Copy to Clipboard"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
+                        </div>
+                        <Input
+                            id="ssh_key_path"
+                            name="ssh_key_path"
+                            value={formData.ssh_key_path || ""}
+                            onChange={handleChange}
+                            placeholder="~/.ssh/id_ed25519"
+                        />
+                        {keyGenError && (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>{keyGenError}</AlertDescription>
+                            </Alert>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button type="submit">{account ? "Update" : "Add"} Account</Button>
+            </div>
+
+            <AccountTypeDialog
+                open={showCreateAccountType}
+                onOpenChange={setShowCreateAccountType}
+                onCreated={handleAccountTypeCreated}
+            />
+        </form>
+    )
 }

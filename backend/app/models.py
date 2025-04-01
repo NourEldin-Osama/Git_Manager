@@ -49,7 +49,7 @@ class AccountTypeUpdate(AccountTypeBase):
 
 
 class AccountTypePublic(AccountTypeBase):
-    pass
+    id: int
 
 
 class AccountBase(SQLModel):
@@ -160,6 +160,7 @@ class ProjectPublic(ProjectBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    configured: bool
 
 
 class ProjectUpdate(SQLModel):
