@@ -65,7 +65,7 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
     const handleBrowse = async () => {
         setIsSelectingFolder(true)
         try {
-            const response = await api.folderSelect.openDialog()
+            const response = await api.system.openFolderDialog()
             if (response.status === "success" && response.path) {
                 setFormData({ ...formData, path: response.path })
 

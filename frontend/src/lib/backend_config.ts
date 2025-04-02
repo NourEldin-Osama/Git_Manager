@@ -23,12 +23,21 @@ export const api = {
                 python_version: string;
             }
         }> => {
-            const response = await fetch(`${backend_api_url}/api/system/check_prerequisites`);
+            const response = await fetch(`${backend_api_url}/api/system/check-prerequisites`);
             if (!response.ok) {
                 throw new Error('Failed to check system prerequisites');
             }
             return response.json();
         },
+        openFolderDialog: async (): Promise<{ status: string; path?: string; message?: string }> => {
+            const response = await fetch(`${backend_api_url}/api/system/folder-select`, {
+                method: 'POST',
+            });
+            if (!response.ok) {
+                throw new Error('Failed to open folder dialog');
+            }
+            return response.json();
+        }
     },
     accountTypes: {
         create: async (name: string): Promise<AccountType> => {
@@ -192,15 +201,4 @@ export const api = {
             return response.json();
         }
     },
-    folderSelect: {
-        openDialog: async (): Promise<{ status: string; path?: string; message?: string }> => {
-            const response = await fetch(`${backend_api_url}/api/folder-select/dialog`, {
-                method: 'POST',
-            });
-            if (!response.ok) {
-                throw new Error('Failed to open folder dialog');
-            }
-            return response.json();
-        }
-    }
 }
