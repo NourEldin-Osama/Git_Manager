@@ -18,7 +18,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Key, AlertCircle, Plus } from "lucide-react"
+import { Key, AlertCircle, Plus, Clipboard, ClipboardCheck } from "lucide-react"
 import { siGithub } from "simple-icons/icons"
 import { api } from "@/lib/backend_config"
 import { toast } from "sonner"
@@ -201,6 +201,22 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                                         </div>
                                         <DialogFooter className="flex flex-col sm:flex-row gap-2">
                                             <Button
+                                                onClick={handleCopyToClipboard}
+                                                className="w-40 flex items-center gap-2"
+                                            >
+                                                {isCopied ? (
+                                                    <>
+                                                        <ClipboardCheck className="h-4 w-4" />
+                                                        Copied!
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Clipboard className="h-4 w-4" />
+                                                        Copy to Clipboard
+                                                    </>
+                                                )}
+                                            </Button>
+                                            <Button
                                                 variant="outline"
                                                 className="flex items-center gap-2"
                                                 onClick={() => window.open("https://github.com/settings/ssh/new", "_blank")}
@@ -209,11 +225,6 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                                                     <path d={siGithub.path} />
                                                 </svg>
                                                 Add SSH Key to GitHub
-                                            </Button>
-                                            <Button
-                                                onClick={handleCopyToClipboard}
-                                            >
-                                                {isCopied ? "Copied!" : "Copy to Clipboard"}
                                             </Button>
                                         </DialogFooter>
                                     </DialogContent>

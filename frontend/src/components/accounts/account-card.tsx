@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button"
 import type { GitAccount } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Key, Mail, Trash, User } from "lucide-react"
+import { Edit, Key, Mail, Trash, User, Clipboard, ClipboardCheck } from "lucide-react"
 import { siGithub } from "simple-icons/icons"
 import {
     Dialog,
@@ -86,6 +86,22 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
                                     </div>
                                     <DialogFooter className="flex flex-col sm:flex-row gap-2">
                                         <Button
+                                            onClick={handleCopyToClipboard}
+                                            className="w-40 flex items-center gap-2"
+                                        >
+                                            {isCopied ? (
+                                                <>
+                                                    <ClipboardCheck className="h-4 w-4" />
+                                                    Copied!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Clipboard className="h-4 w-4" />
+                                                    Copy to Clipboard
+                                                </>
+                                            )}
+                                        </Button>
+                                        <Button
                                             variant="outline"
                                             className="flex items-center gap-2"
                                             onClick={() => window.open("https://github.com/settings/ssh/new", "_blank")}
@@ -94,11 +110,6 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
                                                 <path d={siGithub.path} />
                                             </svg>
                                             Add SSH Key to GitHub
-                                        </Button>
-                                        <Button
-                                            onClick={handleCopyToClipboard}
-                                        >
-                                            {isCopied ? "Copied!" : "Copy to Clipboard"}
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
