@@ -127,7 +127,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="user_name">Git Username</Label>
+                    <Label htmlFor="user_name">Username</Label>
                     <Input
                         id="user_name"
                         name="user_name"
@@ -139,7 +139,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="user_email">Git Email</Label>
+                    <Label htmlFor="user_email">Email</Label>
                     <Input
                         id="user_email"
                         name="user_email"
@@ -171,7 +171,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                             ))}
                             <SelectItem value="new" className="text-primary flex items-center gap-2">
                                 <Plus className="h-4 w-4" />
-                                Create new type
+                                Add new type
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -253,7 +253,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                 <Button type="button" variant="outline" onClick={onCancel}>
                     Cancel
                 </Button>
-                <Button type="submit">{account ? "Update" : "Add"} Account</Button>
+                <Button type="submit">{account ? "Update" : "Add"}</Button>
             </div>
 
             <AccountTypeDialog

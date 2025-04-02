@@ -56,12 +56,12 @@ export function AccountsList() {
             const createdAccount = await api.accounts.create(account)
             setAccounts([...accounts, createdAccount])
             setIsAddingAccount(false)
-            toast.success("Account created", {
-                description: `${account.name} was successfully created.`
+            toast.success("Account added", {
+                description: `${account.name} was successfully added.`
             })
         } catch (err) {
-            console.error("Failed to create account:", err)
-            toast.error("Error creating account", {
+            console.error("Failed to add account:", err)
+            toast.error("Error adding account", {
                 description: err instanceof Error ? err.message : "An error occurred"
             })
         }

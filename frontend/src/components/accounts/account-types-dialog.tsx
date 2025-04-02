@@ -121,7 +121,7 @@ export function AccountTypesDialog({ open, onOpenChange }: AccountTypesDialogPro
                             className="flex items-center gap-1"
                         >
                             <Plus className="h-4 w-4" />
-                            Create Type
+                            Add Type
                         </Button>
                     </div>
 
@@ -129,7 +129,7 @@ export function AccountTypesDialog({ open, onOpenChange }: AccountTypesDialogPro
                         <div className="text-center py-4">Loading account types...</div>
                     ) : accountTypes.length === 0 ? (
                         <div className="text-center py-4 text-muted-foreground">
-                            No account types found. Create your first type.
+                            No account types found. Add your first type.
                         </div>
                     ) : (
                         <div className="max-h-[300px] overflow-y-auto">

@@ -63,8 +63,8 @@ export function AccountTypeDialog({
                 if (onUpdated) onUpdated(result)
             } else {
                 result = await api.accountTypes.create(name)
-                toast.success("Account type created", {
-                    description: `${name} was successfully created.`
+                toast.success("Account type added", {
+                    description: `${name} was successfully added.`
                 })
                 if (onCreated) onCreated(result)
             }
@@ -85,11 +85,11 @@ export function AccountTypeDialog({
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>{accountType ? "Edit" : "Create"} Account Type</DialogTitle>
+                    <DialogTitle>{accountType ? "Edit" : "Add"} Account Type</DialogTitle>
                     <DialogDescription>
                         {accountType
                             ? "Update the name of this account type."
-                            : "Create a new type to categorize your Git accounts."}
+                            : "Add a new type to categorize your Git accounts."}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
@@ -115,7 +115,7 @@ export function AccountTypeDialog({
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : accountType ? "Save Changes" : "Create"}
+                            {isLoading ? "Saving..." : accountType ? "Save Changes" : "Add"}
                         </Button>
                     </DialogFooter>
                 </form>

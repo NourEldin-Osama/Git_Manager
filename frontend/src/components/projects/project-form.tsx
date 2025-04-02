@@ -153,7 +153,7 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
                     </Select>
                     {accounts.length === 0 && !isLoadingAccounts && (
                         <p className="text-sm text-muted-foreground">
-                            No accounts available. Please create an account first.
+                            No accounts available. Please add an account first.
                         </p>
                     )}
                 </div>
@@ -205,7 +205,7 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
                     Cancel
                 </Button>
                 <Button type="submit" disabled={isLoadingAccounts || accounts.length === 0}>
-                    {project ? "Update" : "Add"} Project
+                    {project ? "Update" : "Add"}
                 </Button>
             </div>
         </form>

@@ -53,12 +53,12 @@ export function ProjectsList() {
             const createdProject = await api.projects.create(project)
             setProjects([...projects, createdProject])
             setIsAddingProject(false)
-            toast.success("Project created", {
-                description: `${project.name} was successfully created.`
+            toast.success("Project added", {
+                description: `${project.name} was successfully added.`
             })
         } catch (err) {
-            console.error("Failed to create project:", err)
-            toast.error("Error creating project", {
+            console.error("Failed to add project:", err)
+            toast.error("Error adding project", {
                 description: err instanceof Error ? err.message : "An error occurred"
             })
         }
