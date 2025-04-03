@@ -81,8 +81,10 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
                                             Add this public key to your Git provider.
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <div className="bg-muted p-3 rounded-md overflow-auto max-h-[200px]">
-                                        <pre className="text-xs">{account.public_key}</pre>
+                                    <div className="bg-muted rounded-md overflow-auto max-h-[200px]">
+                                        <div className="p-3 min-w-full w-fit">
+                                            <pre className="text-xs whitespace-pre">{account.public_key}</pre>
+                                        </div>
                                     </div>
                                     <DialogFooter className="flex flex-col sm:flex-row gap-2">
                                         <Button

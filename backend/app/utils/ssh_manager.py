@@ -5,6 +5,7 @@ SSH_CONFIG_PATH = Path.home() / ".ssh" / "config"
 
 
 def generate_ssh_key(account_name: str, email: str, account_type: str, overwrite: bool) -> Path:
+    # Generate SSH key in ~/.ssh/ directory
     key_path = Path.home() / ".ssh" / f"id_{account_name}_{account_type}"
     file_exists = key_path.exists()
     if file_exists and not overwrite:
@@ -20,11 +21,14 @@ def generate_ssh_key(account_name: str, email: str, account_type: str, overwrite
 
 
 def update_ssh_config(account_name: str, account_type: str, key_path: Path):
+    # Convert absolute path to ~/.ssh/ format for better portability
+    relative_path = f"~/.ssh/{key_path.name}"
+
     config_entry = f"""
 Host github-{account_name}-{account_type}
     HostName github.com
     User git
-    IdentityFile {key_path}
+    IdentityFile {relative_path}
 """
     with open(SSH_CONFIG_PATH, "a") as file:
         file.write(config_entry)

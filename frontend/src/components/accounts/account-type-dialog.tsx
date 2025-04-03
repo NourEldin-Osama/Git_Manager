@@ -100,21 +100,20 @@ export function AccountTypeDialog({
                                 id="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="personal, work, opensource, etc."
+                                placeholder="personal, work, open source, etc."
                                 disabled={isLoading}
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsOpen(false)}
-                            disabled={isLoading}
-                        >
+                        <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
+                        <Button
+                            type="submit"
+                            disabled={isLoading}
+                            variant={accountType ? "blue" : "green"}
+                        >
                             {isLoading ? "Saving..." : accountType ? "Save Changes" : "Add"}
                         </Button>
                     </DialogFooter>

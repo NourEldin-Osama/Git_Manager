@@ -9,9 +9,10 @@ from app.models import (
     AccountCreate,
     AccountPublic,
     AccountPublicWithProjects,
+    AccountType,
     AccountUpdate,
 )
-from app.utils.services import create_git_account, get_or_create_account_type, list_accounts_ssh_config
+from app.utils.services import create_git_account, list_accounts_ssh_config
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -39,13 +40,14 @@ async def create_account(account: AccountCreate, session: SessionDependency):
         if existing:
             raise HTTPException(status_code=400, detail="Account already exists")
 
-        # Get or create account type using the reusable function
-        account_type_name = account.account_type_name or "personal"
-        account_type = get_or_create_account_type(session, account_type_name)
-
         # Create account
         account_db = Account.model_validate(account)
-        account_db.account_type_id = account_type.id
+
+        # Get the account type
+        account_type = session.get(AccountType, account.account_type_id)
+        if not account_type:
+            raise HTTPException(status_code=400, detail="Account type not found")
+        account_db.account_type = account_type
 
         # Now create the account with SSH key
         ssh_key_path, public_key = create_git_account(account_db)

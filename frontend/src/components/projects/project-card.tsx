@@ -133,7 +133,12 @@ export function ProjectCard({ project, onEdit, onDelete, onValidate }: ProjectCa
                     <Button size="sm" variant="outline" onClick={handleValidate} disabled={isValidating}>
                         {isValidating ? 'Validating...' : 'Validate'}
                     </Button>
-                    <Button size="sm" onClick={handleSwitchAccount} disabled={isLoading}>
+                    <Button
+                        size="sm"
+                        onClick={handleSwitchAccount}
+                        disabled={isLoading}
+                        variant="blue"
+                    >
                         <GitBranch className="mr-2 h-4 w-4" />
                         {isLoading ? 'Switching...' : 'Switch Account'}
                     </Button>

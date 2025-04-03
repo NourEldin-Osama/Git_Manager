@@ -32,6 +32,7 @@ export function AccountsList() {
     const [showAccountTypesDialog, setShowAccountTypesDialog] = useState(false)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [accountToDelete, setAccountToDelete] = useState<GitAccount | null>(null)
+    const [accountTypesVersion, setAccountTypesVersion] = useState(0)
 
     useEffect(() => {
         fetchAccounts()
@@ -127,11 +128,19 @@ export function AccountsList() {
         }
     }
 
+    const handleAccountTypesDialogChange = (open: boolean) => {
+        setShowAccountTypesDialog(open)
+        // If the dialog is closing, increment the version to trigger a refresh
+        if (!open) {
+            setAccountTypesVersion(prev => prev + 1)
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Git Accounts</h2>
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                     <Button variant="outline" onClick={handleSyncSSHConfig} disabled={isSyncing}>
                         <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
                         {isSyncing ? "Syncing..." : "Sync SSH Config"}
@@ -139,7 +148,7 @@ export function AccountsList() {
                     <Button variant="outline" onClick={() => setShowAccountTypesDialog(true)}>
                         Manage Types
                     </Button>
-                    <Button onClick={() => setIsAddingAccount(true)}>
+                    <Button variant="green" onClick={() => setIsAddingAccount(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Account
                     </Button>
@@ -161,7 +170,11 @@ export function AccountsList() {
                         <CardDescription>Enter the details for your Git account</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <AccountForm onSubmit={handleAddAccount} onCancel={() => setIsAddingAccount(false)} />
+                        <AccountForm
+                            onSubmit={handleAddAccount}
+                            onCancel={() => setIsAddingAccount(false)}
+                            accountTypesVersion={accountTypesVersion}
+                        />
                     </CardContent>
                 </Card>
             )}
@@ -177,6 +190,7 @@ export function AccountsList() {
                             account={editingAccount}
                             onSubmit={handleEditAccount}
                             onCancel={() => setEditingAccount(null)}
+                            accountTypesVersion={accountTypesVersion}
                         />
                     </CardContent>
                 </Card>
@@ -203,7 +217,7 @@ export function AccountsList() {
 
             <AccountTypesDialog
                 open={showAccountTypesDialog}
-                onOpenChange={setShowAccountTypesDialog}
+                onOpenChange={handleAccountTypesDialogChange}
             />
 
             {/* Confirm Delete Dialog */}

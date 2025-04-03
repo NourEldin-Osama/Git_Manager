@@ -28,9 +28,10 @@ interface AccountFormProps {
     account?: GitAccount
     onSubmit: (account: GitAccount | AccountCreate) => void
     onCancel: () => void
+    accountTypesVersion?: number // New prop to track when account types change
 }
 
-export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
+export function AccountForm({ account, onSubmit, onCancel, accountTypesVersion = 0 }: AccountFormProps) {
     const [formData, setFormData] = useState<Partial<GitAccount | AccountCreate>>({
         id: account?.id || 0,
         name: account?.name || "",
@@ -47,7 +48,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
 
     useEffect(() => {
         fetchAccountTypes()
-    }, [])
+    }, [accountTypesVersion]) // Re-fetch when accountTypesVersion changes
 
     const fetchAccountTypes = async () => {
         setIsLoadingAccountTypes(true)
@@ -196,8 +197,10 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                                                 Add this public key to your Git provider.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <div className="bg-muted p-3 rounded-md overflow-auto max-h-[200px]">
-                                            <pre className="text-xs">{account.public_key}</pre>
+                                        <div className="bg-muted rounded-md overflow-auto max-h-[200px]">
+                                            <div className="p-3 min-w-full w-fit">
+                                                <pre className="text-xs whitespace-pre">{account.public_key}</pre>
+                                            </div>
                                         </div>
                                         <DialogFooter className="flex flex-col sm:flex-row gap-2">
                                             <Button
@@ -253,7 +256,12 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                 <Button type="button" variant="outline" onClick={onCancel}>
                     Cancel
                 </Button>
-                <Button type="submit">{account ? "Update" : "Add"}</Button>
+                <Button
+                    type="submit"
+                    variant={account ? "blue" : "green"}
+                >
+                    {account ? "Update" : "Add"}
+                </Button>
             </div>
 
             <AccountTypeDialog

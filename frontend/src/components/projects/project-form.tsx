@@ -204,7 +204,11 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
                 <Button type="button" variant="outline" onClick={onCancel}>
                     Cancel
                 </Button>
-                <Button type="submit" disabled={isLoadingAccounts || accounts.length === 0}>
+                <Button
+                    type="submit"
+                    disabled={isLoadingAccounts || accounts.length === 0}
+                    variant={project ? "blue" : "green"}
+                >
                     {project ? "Update" : "Add"}
                 </Button>
             </div>

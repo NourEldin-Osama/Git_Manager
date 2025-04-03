@@ -126,7 +126,10 @@ export function ProjectsList() {
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Git Projects</h2>
                 <div className="flex space-x-2">
-                    <Button onClick={() => setIsAddingProject(true)}>
+                    <Button
+                        onClick={() => setIsAddingProject(true)}
+                        variant="green"
+                    >
                         <Plus className="mr-2 h-4 w-4" />
                         Add Project
                     </Button>

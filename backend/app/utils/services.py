@@ -30,6 +30,7 @@ def get_or_create_account_type(session: Session, account_type_name: str) -> Acco
 
 
 def create_git_account(account: Account, overwrite: bool = False) -> tuple[str, str]:
+    # Get the account type
     account_type = account.account_type.name
     # Generate SSH key
     key_path = generate_ssh_key(account.name, account.user_email, account_type, overwrite)

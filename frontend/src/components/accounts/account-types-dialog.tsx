@@ -119,6 +119,7 @@ export function AccountTypesDialog({ open, onOpenChange }: AccountTypesDialogPro
                             size="sm"
                             onClick={() => setShowCreateDialog(true)}
                             className="flex items-center gap-1"
+                            variant="green"
                         >
                             <Plus className="h-4 w-4" />
                             Add Type
@@ -170,7 +171,12 @@ export function AccountTypesDialog({ open, onOpenChange }: AccountTypesDialogPro
                     )}
 
                     <DialogFooter>
-                        <Button onClick={() => onOpenChange(false)}>Close</Button>
+                        <Button
+                            onClick={() => onOpenChange(false)}
+                            variant="outline"
+                        >
+                            Close
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
