@@ -11,9 +11,13 @@ def generate_ssh_key(account_name: str, email: str, account_type: str, overwrite
     if file_exists and not overwrite:
         raise FileExistsError(f"SSH key already exists at {key_path}. Use overwrite=True to replace it.")
 
+    # If overwriting, delete existing keys first
+    if overwrite:
+        key_path.unlink(missing_ok=True)
+        public_key_path = Path(f"{key_path}.pub")
+        public_key_path.unlink(missing_ok=True)
+
     command = f"ssh-keygen -t ed25519 -C {email} -f {key_path} -N '' -q"
-    if file_exists and overwrite:
-        command += " -y"
     command = command.split()
 
     subprocess.run(command, check=True)
