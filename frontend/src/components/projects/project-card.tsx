@@ -8,18 +8,22 @@ import { CheckCircle, Edit, Folder, GitBranch, Trash, AlertCircle } from "lucide
 import { useState, useEffect } from "react"
 import { api } from "@/lib/backend_config"
 import { toast } from "sonner"
+import { AccountSelectorDialog } from "@/components/dialogs/account-selector-dialog"
 
 interface ProjectCardProps {
     project: GitProject
     onEdit: () => void
     onDelete: () => void
     onValidate: () => Promise<boolean>
+    onAccountSwitch?: (projectId: number, accountId: number) => void
 }
 
-export function ProjectCard({ project, onEdit, onDelete, onValidate }: ProjectCardProps) {
+export function ProjectCard({ project, onEdit, onDelete, onValidate, onAccountSwitch }: ProjectCardProps) {
     const [accountName, setAccountName] = useState<string>("Loading...")
     const [isLoading, setIsLoading] = useState(false)
     const [isValidating, setIsValidating] = useState(false)
+    const [accounts, setAccounts] = useState<GitAccount[]>([])
+    const [isSelectorOpen, setIsSelectorOpen] = useState(false)
 
     useEffect(() => {
         if (project.account_id) {
@@ -44,8 +48,10 @@ export function ProjectCard({ project, onEdit, onDelete, onValidate }: ProjectCa
     const handleSwitchAccount = async () => {
         setIsLoading(true)
         try {
-            const accounts = await api.accounts.list()
-            if (accounts.length <= 1) {
+            const accountsList = await api.accounts.list()
+            setAccounts(accountsList)
+
+            if (accountsList.length <= 1) {
                 toast.warning("Switch account failed", {
                     description: "You need at least two accounts to switch between them."
                 })
@@ -53,17 +59,45 @@ export function ProjectCard({ project, onEdit, onDelete, onValidate }: ProjectCa
             }
 
             // Find a different account to switch to
-            const otherAccount = accounts.find(a => a.id !== project.account_id)
-            if (!otherAccount) return
+            const otherAccounts = accountsList.filter(a => a.id !== project.account_id)
+            if (otherAccounts.length === 0) return
 
+            // If there are multiple accounts, show selector dialog
+            if (otherAccounts.length > 1) {
+                setIsSelectorOpen(true)
+            } else {
+                // Only one other account, switch directly
+                await switchToAccount(otherAccounts[0].id)
+            }
+        } catch (err) {
+            console.error("Failed to fetch accounts:", err)
+            toast.error("Failed to switch account", {
+                description: err instanceof Error ? err.message : "Unknown error"
+            })
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const switchToAccount = async (newAccountId: number) => {
+        setIsLoading(true)
+        try {
             // Update the project with the new account
-            await api.projects.update(project.id, { account_id: otherAccount.id })
+            await api.projects.update(project.id, { account_id: newAccountId })
+
+            // Find the account name for the toast message
+            const newAccount = accounts.find(a => a.id === newAccountId)
             toast.success("Account switched", {
-                description: `Switched project ${project.name} to account: ${otherAccount.name}`
+                description: `Switched project ${project.name} to account: ${newAccount?.name}`
             })
 
             // Refresh account name
-            setAccountName(otherAccount.name)
+            setAccountName(newAccount?.name || "Unknown Account")
+
+            // Notify parent component about the account switch
+            if (onAccountSwitch) {
+                onAccountSwitch(project.id, newAccountId)
+            }
         } catch (err) {
             console.error("Failed to switch account:", err)
             toast.error("Failed to switch account", {
@@ -144,6 +178,14 @@ export function ProjectCard({ project, onEdit, onDelete, onValidate }: ProjectCa
                     </Button>
                 </div>
             </CardFooter>
+
+            <AccountSelectorDialog
+                isOpen={isSelectorOpen}
+                onClose={() => setIsSelectorOpen(false)}
+                onAccountSelect={switchToAccount}
+                accounts={accounts}
+                currentAccountId={project.account_id}
+            />
         </Card>
     )
 }

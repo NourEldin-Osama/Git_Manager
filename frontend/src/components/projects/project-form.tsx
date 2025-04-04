@@ -17,9 +17,10 @@ interface ProjectFormProps {
     project?: GitProject
     onSubmit: (project: Omit<GitProject, 'id' | 'created_at' | 'updated_at' | 'configured'>) => void
     onCancel: () => void
+    currentAccountId?: number | null  // Added prop to receive updated account ID
 }
 
-export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
+export function ProjectForm({ project, onSubmit, onCancel, currentAccountId }: ProjectFormProps) {
     const [formData, setFormData] = useState<Omit<GitProject, 'id' | 'created_at' | 'updated_at' | 'configured'>>({
         name: project?.name || "",
         path: project?.path || "",
@@ -35,6 +36,22 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
     useEffect(() => {
         fetchAccounts()
     }, [])
+
+    // Update the account in the form when it changes externally (e.g., via "Switch Account" button)
+    useEffect(() => {
+        if (currentAccountId !== undefined && currentAccountId !== null) {
+            // Force update the form data with the new account ID
+            setFormData(prev => ({ ...prev, account_id: currentAccountId }))
+
+            // Show a toast notification about the account change
+            const accountName = accounts.find(a => a.id === currentAccountId)?.name
+            if (accountName) {
+                toast.info("Account updated", {
+                    description: `The project's account has been switched to ${accountName}`
+                })
+            }
+        }
+    }, [currentAccountId, accounts])
 
     const fetchAccounts = async () => {
         setIsLoadingAccounts(true)

@@ -6,7 +6,7 @@ class GitManager:
     @staticmethod
     def validate_git_repo(path: Path) -> bool:
         try:
-            command = "git rev-parse --is-inside-work-tree".split()  # Check if inside a git repository
+            command = ["git", "rev-parse", "--is-inside-work-tree"]  # Check if inside a git repository
             subprocess.run(command, cwd=path, capture_output=True, check=True)
             return True
         except subprocess.CalledProcessError:
@@ -16,7 +16,7 @@ class GitManager:
     def get_remote_url(path: Path) -> tuple[str, str] | None:
         try:
             urls = dict()
-            command = "git remote -v".split()
+            command = ["git", "remote", "-v"]
             result = subprocess.run(command, cwd=path, capture_output=True, text=True, check=True)
             for line in result.stdout.splitlines():
                 line = line.strip()
@@ -147,8 +147,8 @@ class GitManager:
         - To: git@github-username-work:user/repo.git
         """
         try:
-            # Add remote using provided URL directly
-            command = f"git remote add {remote_name} {remote_url}".split()
+            # Use a list of arguments instead of splitting a string to preserve spaces in the URL
+            command = ["git", "remote", "add", remote_name, remote_url]
             subprocess.run(command, cwd=path, check=True)
             return True
         except Exception as error:
@@ -161,7 +161,7 @@ class GitManager:
         Removes remote from git repository
         """
         try:
-            command = f"git remote remove {remote}".split()
+            command = ["git", "remote", "remove", remote]
             subprocess.run(command, cwd=path, check=True)
             return True
         except subprocess.CalledProcessError:
@@ -173,7 +173,7 @@ class GitManager:
         Validates SSH connection to the host
         """
         try:
-            command = f"ssh -T {host}".split()
+            command = ["ssh", "-T", host]
             result = subprocess.run(command, cwd=path, check=False, text=True, capture_output=True)
             # Check if the output contains "successfully authenticated"
             if "successfully authenticated" in result.stderr:
@@ -189,7 +189,7 @@ class GitManager:
         Sets git config value for the repository
         """
         try:
-            command = f"git config {key} '{value}'".split()
+            command = ["git", "config", key, value]
             subprocess.run(command, cwd=path, check=True)
             return True
         except subprocess.CalledProcessError:

@@ -29,6 +29,7 @@ export function ProjectsList() {
     const [error, setError] = useState<string | null>(null)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [projectToDelete, setProjectToDelete] = useState<GitProject | null>(null)
+    const [switchedAccountId, setSwitchedAccountId] = useState<number | null>(null)
 
     useEffect(() => {
         fetchProjects()
@@ -121,6 +122,34 @@ export function ProjectsList() {
         }
     }
 
+    const handleAccountSwitch = async (projectId: number, newAccountId: number) => {
+        try {
+            // Fetch the complete updated project data after the switch
+            const updatedProject = await api.projects.get(projectId);
+
+            // Update the projects list with the complete refreshed project
+            const updatedProjects = projects.map(p =>
+                p.id === projectId ? updatedProject : p
+            );
+            setProjects(updatedProjects);
+
+            // If currently editing the project that had its account switched,
+            // update both the editingProject and the switchedAccountId
+            if (editingProject && editingProject.id === projectId) {
+                // Update the editing project with the complete refreshed project
+                setEditingProject(updatedProject);
+
+                // Set the switched account ID to trigger the form update
+                setSwitchedAccountId(newAccountId);
+            }
+        } catch (err) {
+            console.error("Failed to refresh project data after account switch:", err);
+            toast.error("Error refreshing project data", {
+                description: "Project was updated but the display may be out of date."
+            });
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -166,7 +195,11 @@ export function ProjectsList() {
                         <ProjectForm
                             project={editingProject}
                             onSubmit={handleEditProject}
-                            onCancel={() => setEditingProject(null)}
+                            onCancel={() => {
+                                setEditingProject(null);
+                                setSwitchedAccountId(null);
+                            }}
+                            currentAccountId={switchedAccountId}
                         />
                     </CardContent>
                 </Card>
@@ -185,9 +218,13 @@ export function ProjectsList() {
                         <ProjectCard
                             key={project.id}
                             project={project}
-                            onEdit={() => setEditingProject(project)}
+                            onEdit={() => {
+                                setEditingProject(project);
+                                setSwitchedAccountId(null); // Reset when opening the edit form
+                            }}
                             onDelete={() => confirmDeleteProject(project)}
                             onValidate={() => validateProject(project.id)}
+                            onAccountSwitch={handleAccountSwitch}
                         />
                     ))}
                 </div>

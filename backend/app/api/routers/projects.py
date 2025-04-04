@@ -83,14 +83,32 @@ async def read_project(project_id: int, session: SessionDependency):
     description="""
     Updates an existing Git project's information.
     Only provided fields will be updated.
+    If account_id is changed, the project will be reconfigured with the new account.
     """,
 )
 async def update_project(project_id: int, project: ProjectUpdate, session: SessionDependency):
     project_db = session.get(Project, project_id)
     if not project_db:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    # Check if account_id is being updated
+    old_account_id = project_db.account_id
+
+    # Update project fields
     project_data = project.model_dump(exclude_unset=True)
     project_db.sqlmodel_update(project_data)
+
+    # If account_id changed, reconfigure the project with new account
+    if "account_id" in project_data and old_account_id != project_db.account_id:
+        new_account = session.get(Account, project_db.account_id)
+        if not new_account:
+            raise HTTPException(status_code=404, detail="New account not found")
+        try:
+            # Reconfigure project with new account
+            project_db = configure_project(project_db, new_account)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to reconfigure project: {e!s}")
+
     session.add(project_db)
     session.commit()
     session.refresh(project_db)
