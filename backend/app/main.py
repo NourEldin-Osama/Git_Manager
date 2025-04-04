@@ -51,7 +51,7 @@ app.add_middleware(
 app.include_router(api_router, prefix=prefix)
 
 # Set the static directory to serve frontend files
-STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
+STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
