@@ -45,6 +45,7 @@ export function AccountForm({ account, onSubmit, onCancel, accountTypesVersion =
     const [isLoadingAccountTypes, setIsLoadingAccountTypes] = useState(false)
     const [showCreateAccountType, setShowCreateAccountType] = useState(false)
     const [isCopied, setIsCopied] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
         fetchAccountTypes()
@@ -107,9 +108,11 @@ export function AccountForm({ account, onSubmit, onCancel, accountTypesVersion =
         }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        onSubmit(formData as GitAccount | AccountCreate)
+        setIsSubmitting(true)
+        await onSubmit(formData as GitAccount | AccountCreate)
+        setIsSubmitting(false)
     }
 
     return (
@@ -259,6 +262,8 @@ export function AccountForm({ account, onSubmit, onCancel, accountTypesVersion =
                 <Button
                     type="submit"
                     variant={account ? "blue" : "green"}
+                    is_loading={isSubmitting}
+                    loading_text={account ? "Saving..." : "Adding..."}
                 >
                     {account ? "Update" : "Add"}
                 </Button>

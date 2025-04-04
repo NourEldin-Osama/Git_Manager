@@ -90,9 +90,12 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
         }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        onSubmit(formData)
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        await onSubmit(formData);
+        setIsSubmitting(false);
     }
 
     return (
@@ -126,7 +129,8 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
                             type="button"
                             variant="outline"
                             onClick={handleBrowse}
-                            disabled={isSelectingFolder}
+                            is_loading={isSelectingFolder}
+                            loading_text="Opening..."
                         >
                             <Folder className="h-4 w-4" />
                         </Button>
@@ -208,6 +212,8 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
                     type="submit"
                     disabled={isLoadingAccounts || accounts.length === 0}
                     variant={project ? "blue" : "green"}
+                    is_loading={isSubmitting}
+                    loading_text={project ? "Saving..." : "Adding..."}
                 >
                     {project ? "Update" : "Add"}
                 </Button>
