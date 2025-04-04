@@ -175,3 +175,9 @@ class ProjectPublicWithAccount(ProjectPublic):
 
 class AccountPublicWithProjects(AccountPublic):
     projects: list[ProjectPublic] = []
+
+
+class FolderResponse(SQLModel):
+    status: str
+    path: str | None = None
+    message: str | None = None

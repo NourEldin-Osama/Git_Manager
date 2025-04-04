@@ -13,6 +13,7 @@ from app.models import (
     AccountUpdate,
 )
 from app.utils.services import create_git_account, list_accounts_ssh_config
+from app.utils.ssh_manager import delete_ssh_key
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -113,12 +114,20 @@ async def update_account(account_id: int, account: AccountUpdate, session: Sessi
     "/{account_id}",
     status_code=status.HTTP_200_OK,
     summary="Delete a Git account",
-    description="Deletes a Git account and its associated data.",
+    description="Deletes a Git account and its associated SSH keys and configuration.",
 )
 async def delete_account(account_id: int, session: SessionDependency):
     account = session.get(Account, account_id)
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
+
+    # Delete SSH keys if they exist
+    if account.ssh_key_path:
+        try:
+            delete_ssh_key(account.ssh_key_path)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error deleting SSH keys: {e}")
+
     session.delete(account)
     session.commit()
     return {"message": "Account deleted successfully"}

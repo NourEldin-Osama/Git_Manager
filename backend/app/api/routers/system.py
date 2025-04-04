@@ -5,7 +5,8 @@ import subprocess
 from tkinter import Tk, filedialog
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+
+from app.models import FolderResponse
 
 # Configure DPI Awareness for Windows
 if platform.system() == "Windows":
@@ -21,12 +22,6 @@ router = APIRouter(
     tags=["System"],
     responses={404: {"description": "Not found"}},
 )
-
-
-class FolderResponse(BaseModel):
-    status: str
-    path: str | None = None
-    message: str | None = None
 
 
 @router.post("/folder-select", response_model=FolderResponse)
