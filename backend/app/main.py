@@ -42,7 +42,11 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js default port
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+    ],  # Next.js default, FastAPI default
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,7 +55,35 @@ app.add_middleware(
 app.include_router(api_router, prefix=prefix)
 
 # Set the static directory to serve frontend files
-STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+STATIC_DIRS = [
+    Path(__file__).resolve().parent.parent.parent / "frontend" / "dist",
+    # add static directory within app directory
+    Path(__file__).resolve().parent / "static",
+]
+
+STATIC_DIR = None
+for static_dir in STATIC_DIRS:
+    if static_dir.exists():
+        STATIC_DIR = static_dir
+        break
+else:
+    raise FileNotFoundError("Static directory not found.")
 
 
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
+
+def main() -> None:
+    """Start the FastAPI application server.
+
+    This function initializes and starts the FastAPI server with the following configuration:
+    - Host: 127.0.0.1 (localhost)
+    - Port: 8000
+    """
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+
+
+if __name__ == "__main__":
+    main()

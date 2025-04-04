@@ -1,6 +1,6 @@
 [project]
-name = "app"
-version = "0.1.1"
+name = "git-account-manager"
+version = "0.1.5"
 description = "A tool to manage multiple Git accounts and projects"
 readme = "README.md"
 authors = [
@@ -11,6 +11,9 @@ dependencies = [
     "fastapi[all]>=0.115.11",
     "sqlmodel>=0.0.24"
 ]
+
+[project.scripts]
+git-manager = "app.main:main"
 
 [dependency-groups]
 dev = [
@@ -39,6 +42,9 @@ extend-select = [
     "RUF"  # Ruff-specific rules
 ]
 extend-ignore = ["RUF001", "B904", "B008"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
 
 [build-system]
 requires = ["hatchling"]
