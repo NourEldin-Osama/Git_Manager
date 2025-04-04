@@ -1,7 +1,8 @@
 from datetime import datetime
+from pathlib import Path
 
 import sqlalchemy as sa
-from pydantic import EmailStr
+from pydantic import EmailStr, computed_field
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -105,6 +106,14 @@ class AccountPublic(AccountBase):
     created_at: datetime
     updated_at: datetime
     account_type: AccountTypePublic | None = None
+
+    @computed_field
+    @property
+    def ssh_key_filename(self) -> str | None:
+        """Get the SSH key filename from the path"""
+        if not self.ssh_key_path:
+            return None
+        return Path(self.ssh_key_path).name
 
 
 class AccountUpdate(SQLModel):

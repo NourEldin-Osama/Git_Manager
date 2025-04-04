@@ -22,6 +22,7 @@ export interface GitAccount {
     created_at: string;
     updated_at: string;
     account_type?: AccountType;
+    ssh_key_filename?: string;
 }
 
 export interface AccountCreate {

@@ -26,6 +26,7 @@ interface AccountCardProps {
 
 export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
     const [isCopied, setIsCopied] = useState(false)
+    const [isCommandCopied, setIsCommandCopied] = useState(false)
 
     const handleCopyToClipboard = () => {
         if (account.public_key) {
@@ -112,6 +113,58 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
                                                 <path d={siGithub.path} />
                                             </svg>
                                             Add SSH Key to GitHub
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
+                    {account.ssh_key_filename && (
+                        <div className="mt-2">
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-full mb-2">
+                                        <Key className="mr-2 h-4 w-4" />
+                                        View SSH-Add Command
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>SSH Add Command</DialogTitle>
+                                        <DialogDescription>
+                                            Run this command to add your SSH key to the SSH agent.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="bg-muted rounded-md overflow-auto">
+                                        <div className="p-3">
+                                            <pre className="text-xs whitespace-pre">ssh-add ~/.ssh/{account.ssh_key_filename}</pre>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            onClick={() => {
+                                                const command = `ssh-add ~/.ssh/${account.ssh_key_filename}`;
+                                                navigator.clipboard.writeText(command);
+                                                setIsCommandCopied(true);
+                                                toast.success("Command copied to clipboard");
+
+                                                setTimeout(() => {
+                                                    setIsCommandCopied(false);
+                                                }, 2000);
+                                            }}
+                                            className="w-40 flex items-center gap-2"
+                                        >
+                                            {isCommandCopied ? (
+                                                <>
+                                                    <ClipboardCheck className="h-4 w-4" />
+                                                    Copied!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Clipboard className="h-4 w-4" />
+                                                    Copy Command
+                                                </>
+                                            )}
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
