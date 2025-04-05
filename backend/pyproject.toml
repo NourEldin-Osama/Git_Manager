@@ -1,6 +1,6 @@
 [project]
 name = "git-account-manager"
-version = "0.1.5"
+version = "0.1.6"
 description = "A tool to manage multiple Git accounts and projects"
 readme = "README.md"
 authors = [
